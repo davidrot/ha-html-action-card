@@ -1,0 +1,97 @@
+<!--
+  Panda · holds a sign and watches your cursor
+
+  No background and no card frame, so it sits on any dashboard.
+  Write what you like on the sign. A live value works too, for example:
+    <p>Living room: {{ sensor.living_room_temperature.state }} °C</p>
+  Paste the whole file into the card editor.
+-->
+<style>
+  /* transparent: no card frame, no background */
+  ha-card { background: none; border: none; box-shadow: none; }
+
+  .panda { padding: 8px 8px 0; }
+  .panda svg { display: block; width: min(100%, 300px); margin: 0 auto; overflow: visible; }
+
+  .fur { fill: #fbfbf8; stroke: #1d1d1f; stroke-width: 3; stroke-linejoin: round; }
+  .black { fill: #1d1d1f; }
+  .eye-white { fill: #fff; }
+  .pupil { fill: #1d1d1f; transition: transform .08s linear; }
+  .glint { fill: #fff; }
+  .cheek { fill: #ff9aa8; opacity: .55; }
+  .mouth { fill: none; stroke: #1d1d1f; stroke-width: 2.5; stroke-linecap: round; }
+  .lid { fill: #1d1d1f; transform: scaleY(0); transform-box: fill-box; transform-origin: 50% 0; transition: transform .12s; }
+  .blink .lid { transform: scaleY(1); }
+  .ear { animation: ear 5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes ear { 0%, 92%, 100% { transform: rotate(0); } 95% { transform: rotate(-9deg); } }
+
+  .sign {
+    position: relative; z-index: 1; width: min(88%, 280px); margin: -30px auto 0; padding: 12px 14px 20px;
+    text-align: center; color: #3a2a17;
+    background: linear-gradient(180deg, #f6dfb1, #e9c98a); border: 3px solid #1d1d1f; border-radius: 10px;
+    box-shadow: 0 5px 0 #1d1d1f; transform: rotate(-1.5deg);
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", ui-sans-serif, system-ui, sans-serif;
+  }
+  .sign h3 { margin: 0; font-size: 20px; letter-spacing: .01em; }
+  .sign p { margin: 4px 0 0; font-size: 13px; opacity: .8; }
+  .paws { position: relative; z-index: 2; display: flex; justify-content: space-between; width: min(96%, 310px); margin: -22px auto 0; padding-bottom: 12px; }
+  .paws i { width: 44px; height: 30px; background: #1d1d1f; border-radius: 50% 50% 46% 46%; }
+</style>
+
+<div class="panda">
+  <svg viewBox="0 0 300 230" aria-hidden="true">
+    <ellipse class="black ear" cx="78" cy="52" rx="38" ry="36" />
+    <ellipse class="black ear" cx="222" cy="52" rx="38" ry="36" style="animation-delay: 1.3s" />
+    <path class="fur" d="M150 30 C226 30 268 82 268 136 C268 196 216 224 150 224 C84 224 32 196 32 136 C32 82 74 30 150 30 Z" />
+
+    <ellipse class="black" cx="100" cy="124" rx="35" ry="41" transform="rotate(18 100 124)" />
+    <ellipse class="black" cx="200" cy="124" rx="35" ry="41" transform="rotate(-18 200 124)" />
+    <g class="eye">
+      <circle class="eye-white" cx="104" cy="120" r="17" />
+      <g class="pupil"><circle cx="104" cy="120" r="9" /><circle class="glint" cx="107" cy="116" r="3" /></g>
+      <rect class="lid" x="85" y="101" width="38" height="38" rx="17" />
+    </g>
+    <g class="eye">
+      <circle class="eye-white" cx="196" cy="120" r="17" />
+      <g class="pupil"><circle cx="196" cy="120" r="9" /><circle class="glint" cx="199" cy="116" r="3" /></g>
+      <rect class="lid" x="177" y="101" width="38" height="38" rx="17" />
+    </g>
+
+    <ellipse class="cheek" cx="66" cy="166" rx="15" ry="9" />
+    <ellipse class="cheek" cx="234" cy="166" rx="15" ry="9" />
+    <path class="black" d="M136 152 Q150 144 164 152 Q160 168 150 170 Q140 168 136 152 Z" />
+    <path class="mouth" d="M150 170 V178 M150 178 Q139 190 128 181 M150 178 Q161 190 172 181" />
+  </svg>
+
+  <div class="sign">
+    <h3>html-action-card</h3>
+    <p>Any HTML you like, in one card.</p>
+  </div>
+  <div class="paws"><i></i><i></i></div>
+</div>
+
+<script>
+  const panda = document.querySelector('.panda');
+  const eyes = [...document.querySelectorAll('.eye')].map((eye) => ({
+    white: eye.querySelector('.eye-white'),
+    pupil: eye.querySelector('.pupil'),
+  }));
+
+  // Pupils look at the pointer, wherever it is on the page.
+  window.addEventListener('pointermove', (e) => {
+    for (const { white, pupil } of eyes) {
+      const box = white.getBoundingClientRect();
+      const dx = e.clientX - (box.left + box.width / 2);
+      const dy = e.clientY - (box.top + box.height / 2);
+      const reach = Math.min(1, Math.hypot(dx, dy) / 160) * 7;
+      const angle = Math.atan2(dy, dx);
+      pupil.style.transform = `translate(${Math.cos(angle) * reach}px, ${Math.sin(angle) * reach}px)`;
+    }
+  });
+
+  // Blink now and then.
+  setInterval(() => {
+    panda.classList.add('blink');
+    setTimeout(() => panda.classList.remove('blink'), 160);
+  }, 4200);
+</script>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>html-action-card playground</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; background: #fafafa;
+           --primary-color: #03a9f4; --card-background-color: #fff; --primary-text-color: #212121; }
+    ha-card { display: block; background: var(--card-background-color); color: var(--primary-text-color);
+              border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px #0003; max-width: 360px; }
+    .row { margin-top: 16px; display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <html-action-card id="card"></html-action-card>
+  <div class="row">
+    <button id="toggle-light">Mock: toggle light.kitchen</button>
+    <button id="bump-temp">Mock: temperature +1</button>
+    <button id="add-html">Add HTML dynamically</button>
+  </div>
+  <pre id="log" style="font-size:12px;max-height:160px;overflow:auto"></pre>
+  <h3>Editor (changes apply to the card above)</h3>
+  <html-action-card-editor id="editor" style="max-width:560px"></html-action-card-editor>
+  <script type="module">
+    import '/src/main.ts';
+
+    const mkState = (entity_id, state, attributes = {}) => ({
+      entity_id, state, attributes, last_changed: new Date().toISOString(), last_updated: new Date().toISOString(),
+    });
+    window.mkState = mkState;
+    let hass = {
+      connected: true,
+      states: {
+        'light.kitchen': mkState('light.kitchen', 'off'),
+        'sensor.living_room_temp': mkState('sensor.living_room_temp', '21'),
+      },
+      callService: async (domain, service, data) => {
+        console.log('callService', domain, service, data);
+        if (service === 'toggle' || service === 'turn_on' || service === 'turn_off') flip();
+        const log = document.getElementById('log');
+        log.textContent = `${new Date().toLocaleTimeString()} ${domain}.${service} ${JSON.stringify(data)}\n` + log.textContent;
+      },
+    };
+    const card = document.getElementById('card');
+    const push = (patch) => { hass = { ...hass, states: { ...hass.states, ...patch } }; card.hass = hass; };
+    const flip = () => {
+      const s = hass.states['light.kitchen'];
+      push({ 'light.kitchen': mkState('light.kitchen', s.state === 'on' ? 'off' : 'on') });
+    };
+
+    const editor = document.getElementById('editor');
+    editor.addEventListener('config-changed', (e) => { card.setConfig(e.detail.config); card.hass = hass; });
+    const initial = {
+      type: 'custom:html-action-card',
+      content: `
+        <style>.lamp{width:24px;height:24px;border-radius:50%;background:gray}.lamp.on{background:gold}</style>
+        <div class="lamp {{ light.kitchen.state }}"></div>
+        <button data-event="tap" data-action="light.toggle" data-entity="light.kitchen">Kitchen: {{ light.kitchen.state }}</button>
+        <button data-event="press" data-repeat="300" data-action="button.press" data-entity="button.cam_up">Hold me (press+repeat)</button>
+        <button data-event="hold" data-action="light.turn_on" data-data='{"brightness_pct":50}' data-entity="light.kitchen">Long press (hold)</button>
+        <button data-action="more-info" data-entity="light.kitchen" data-confirm="Open more-info?">more-info (confirm)</button>
+        <p data-show-if="sensor.living_room_temp.state > 25">It's hot: {{ sensor.living_room_temp.state }}</p>
+        <p>Temp: {{ sensor.living_room_temp.state }}</p>
+        <p>Light changed {{ relative(light.kitchen.last_changed) }}</p>
+        <button id="s-btn">Script: double-click me</button>
+        <p>Exposed fn: double(temp) = {{ double(sensor.living_room_temp.state) }}</p>
+        <div id="dyn"></div>
+        <script>
+          const b = document.getElementById('s-btn');
+          b.addEventListener('dblclick', () => card.call('light', 'turn_on', { entity_id: 'light.kitchen', brightness_pct: 80 }));
+          card.expose({ double: n => n * 2 });
+          card.effect(() => { b.title = 'light is ' + card.state('light.kitchen'); });
+        <\/script>
+        <script type="module">
+          card.root.getElementById('dyn').insertAdjacentHTML('beforeend', '<p>Module script ran: {{ light.kitchen.state }}</p>');
+        <\/script>`,
+    };
+    card.setConfig(initial);
+    editor.setConfig(initial);
+    card.hass = hass;
+
+    document.getElementById('add-html').onclick = () =>
+      card.shadowRoot.getElementById('dyn')
+        .insertAdjacentHTML('beforeend', '<p>Added later: {{ light.kitchen.state }} / {{ sensor.living_room_temp.state }}</p>');
+    document.getElementById('toggle-light').onclick = flip;
+    document.getElementById('bump-temp').onclick = () => {
+      const t = Number(hass.states['sensor.living_room_temp'].state) + 1;
+      push({ 'sensor.living_room_temp': mkState('sensor.living_room_temp', String(t)) });
+    };
+  </script>
+</body>
+</html>

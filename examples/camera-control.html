@@ -1,0 +1,69 @@
+<!--
+  Camera with touch control · the picture is the joystick
+
+  Shows the live camera picture. Press the top, bottom, left or right part of the picture
+  to move the camera that way; keep pressing to keep moving. No script, rating green.
+
+  For pan/tilt cameras that expose "move" buttons (for example Tapo). Replace:
+    camera.living_room                  your camera (4 places)
+    button.camera_move_up / down / left / right   its move buttons
+  If your camera has no live stream in Home Assistant, use the snapshot line instead (see below).
+  Paste the whole file into the card editor.
+-->
+<style>
+  .cam {
+    position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #0c0f14;
+    border-radius: var(--ha-card-border-radius, 12px);
+    user-select: none; -webkit-user-select: none;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .offline { position: absolute; inset: 0; display: grid; place-items: center; color: #8793a3; font-size: 14px; }
+
+  /* the four touch zones */
+  .zone { position: absolute; padding: 0; cursor: pointer; background: none; border: 0; color: #fff; -webkit-tap-highlight-color: transparent; }
+  .up { top: 0; left: 0; right: 0; height: 30%; }
+  .down { bottom: 0; left: 0; right: 0; height: 30%; }
+  .left { top: 30%; bottom: 30%; left: 0; width: 50%; }
+  .right { top: 30%; bottom: 30%; right: 0; width: 50%; }
+
+  /* arrow hint at each edge, brighter while pressed */
+  .zone::after {
+    content: ""; position: absolute; width: 12px; height: 12px; opacity: .45;
+    border-top: 3px solid currentColor; border-left: 3px solid currentColor;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .7)); transition: opacity .15s, transform .15s;
+  }
+  .up::after { top: 12px; left: calc(50% - 6px); transform: rotate(45deg); }
+  .down::after { bottom: 12px; left: calc(50% - 6px); transform: rotate(225deg); }
+  .left::after { left: 12px; top: calc(50% - 6px); transform: rotate(-45deg); }
+  .right::after { right: 12px; top: calc(50% - 6px); transform: rotate(135deg); }
+  .zone:hover::after { opacity: .8; }
+  .zone:active::after { opacity: 1; }
+  .up:active { background: linear-gradient(to bottom, rgba(255, 255, 255, .28), transparent); }
+  .down:active { background: linear-gradient(to top, rgba(255, 255, 255, .28), transparent); }
+  .left:active { background: linear-gradient(to right, rgba(255, 255, 255, .28), transparent 70%); }
+  .right:active { background: linear-gradient(to left, rgba(255, 255, 255, .28), transparent 70%); }
+  .zone.is-error { background: rgba(219, 68, 55, .35); }
+
+  .label {
+    position: absolute; left: 10px; bottom: 9px; padding: 3px 8px; pointer-events: none;
+    color: #fff; font-size: 12px; background: rgba(0, 0, 0, .45); border-radius: 99px;
+  }
+</style>
+
+<div class="cam">
+  <!-- live stream -->
+  <img alt="" data-show-if="camera.living_room.state != unavailable"
+       src="/api/camera_proxy_stream/camera.living_room?token={{ camera.living_room.attributes.access_token }}">
+  <!-- snapshot instead, refreshed every 2 seconds:
+  <img alt="" src="{{ camera.living_room.attributes.entity_picture }}&t={{ Math.floor(now() / 2000) }}">
+  -->
+  <div class="offline" data-show-if="camera.living_room.state == unavailable">Camera is offline</div>
+
+  <button class="zone up" aria-label="Move up" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_up"></button>
+  <button class="zone left" aria-label="Move left" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_left"></button>
+  <button class="zone right" aria-label="Move right" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_right"></button>
+  <button class="zone down" aria-label="Move down" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_down"></button>
+
+  <div class="label">{{ camera.living_room.attributes.friendly_name }}</div>
+</div>

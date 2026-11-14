@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>html-action-card examples</title>
+  <style>
+    body { margin: 24px; font-family: system-ui, sans-serif; background: #eef1f5;
+           --primary-color: #03a9f4; --card-background-color: #fff; --primary-text-color: #212121;
+           --secondary-background-color: #eef1f5; --divider-color: #d5dae1; --ha-card-border-radius: 14px; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    .tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 380px)); gap: 24px; align-items: start; }
+    figure { margin: 0; }
+    figcaption { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #455; }
+    ha-card { display: block; background: var(--card-background-color); border-radius: var(--ha-card-border-radius);
+              box-shadow: 0 2px 10px #0002; overflow: hidden; }
+    pre { font-size: 12px; max-height: 120px; overflow: auto; }
+    /* ?only=<name>&scale=1.4 shows one card enlarged, for screenshots */
+    body.shot { margin: 12px; }
+    body.shot h1, body.shot .tools, body.shot pre, body.shot figcaption { display: none; }
+    body.shot .gallery { display: block; width: 380px; transform: scale(var(--scale, 1)); transform-origin: 0 0; }
+  </style>
+</head>
+<body>
+  <h1>Examples (mock Home Assistant)</h1>
+  <div class="tools">
+    <button id="finish">Finish the timer now</button>
+  </div>
+  <div class="gallery" id="gallery"></div>
+  <pre id="log"></pre>
+
+  <script type="module">
+    import '/src/main.ts';
+    import { analyze } from '/src/analyze/index.ts';
+
+    const params = new URLSearchParams(location.search);
+    const only = params.get('only');
+    const EXAMPLES = ['kitchen-timer', 'panda', 'snake', 'camera-control'].filter((n) => !only || n === only);
+    if (only) {
+      document.body.classList.add('shot');
+      document.body.style.setProperty('--scale', params.get('scale') || '1');
+    }
+
+    const ent = (entity_id, state, attributes = {}) => ({
+      entity_id, state, attributes, last_changed: new Date().toISOString(), last_updated: new Date().toISOString(),
+    });
+    const states = {
+      'timer.kitchen': ent('timer.kitchen', 'idle', { duration: '0:05:00' }),
+      'camera.living_room': ent('camera.living_room', 'idle', { friendly_name: 'Living room', access_token: 'demo', entity_picture: '/api/camera_proxy/camera.living_room?token=demo' }),
+      'input_number.snake_highscore': ent('input_number.snake_highscore', '0'),
+      'light.desk': ent('light.desk', 'off'),
+    };
+    for (const d of ['up', 'down', 'left', 'right']) states[`button.camera_move_${d}`] = ent(`button.camera_move_${d}`, 'unknown');
+
+    const cards = [];
+    let hass;
+    const push = (patch = {}) => {
+      Object.assign(states, patch);
+      hass = { connected: true, language: 'en', states: { ...states }, callService };
+      for (const c of cards) c.hass = hass;
+    };
+    const ids = (data) => [].concat(data?.entity_id ?? []);
+    const seconds = (hms) => String(hms).split(':').reduce((s, p) => s * 60 + Number(p), 0);
+    let eggTimeout;
+
+    async function callService(domain, service, data) {
+      const log = document.getElementById('log');
+      log.textContent = `${new Date().toLocaleTimeString()} ${domain}.${service} ${JSON.stringify(data)}\n` + log.textContent;
+      const patch = {};
+      for (const id of ids(data)) {
+        const cur = states[id];
+        if (!cur) continue;
+        if (id.startsWith('light.')) {
+          const next = service === 'turn_on' ? 'on' : service === 'turn_off' ? 'off' : cur.state === 'on' ? 'off' : 'on';
+          if (next !== cur.state) patch[id] = ent(id, next);
+        } else if (id.startsWith('timer.')) {
+          clearTimeout(eggTimeout);
+          const fmt = (sec) => `${Math.floor(sec / 3600)}:${String(Math.floor(sec / 60) % 60).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+          if (service === 'start') {
+            const total = data.duration ? seconds(data.duration) : cur.state === 'paused' ? seconds(cur.attributes.remaining) : seconds(cur.attributes.duration);
+            const duration = data.duration ? fmt(total) : cur.attributes.duration;
+            patch[id] = ent(id, 'active', { duration, finishes_at: new Date(Date.now() + total * 1000).toISOString() });
+            eggTimeout = setTimeout(() => push({ [id]: ent(id, 'idle', { duration: states[id].attributes.duration }) }), total * 1000);
+          } else if (service === 'pause' && cur.state === 'active') {
+            const left = Math.max(0, Math.round((Date.parse(cur.attributes.finishes_at) - Date.now()) / 1000));
+            patch[id] = ent(id, 'paused', { duration: cur.attributes.duration, remaining: fmt(left) });
+          } else {
+            patch[id] = ent(id, 'idle', { duration: cur.attributes.duration });
+          }
+        } else if (id.startsWith('input_number.')) {
+          patch[id] = ent(id, String(data.value));
+        }
+      }
+      push(patch);
+    }
+
+    for (const name of EXAMPLES) {
+      // ?raw: the dev server would otherwise inject its own client script into the HTML
+      const content = (await import(/* @vite-ignore */ `/examples/${name}.html?raw`)).default;
+      const figure = document.createElement('figure');
+      const caption = document.createElement('figcaption');
+      caption.textContent = `${name} · rating ${analyze(content).severity}`;
+      const card = document.createElement('html-action-card');
+      card.id = name;
+      card.setConfig({ type: 'custom:html-action-card', content });
+      figure.append(caption, card);
+      document.getElementById('gallery').append(figure);
+      cards.push(card);
+    }
+    push();
+
+    document.getElementById('finish').onclick = () => {
+      const t = states['timer.kitchen'];
+      if (t.state !== 'active') return;
+      clearTimeout(eggTimeout);
+      // pretend the end time has come
+      states['timer.kitchen'] = ent(t.entity_id, 'active', { ...t.attributes, finishes_at: new Date().toISOString() });
+      push();
+      setTimeout(() => push({ 'timer.kitchen': ent(t.entity_id, 'idle', { duration: t.attributes.duration }) }), 400);
+    };
+    window.demo = { states, push, callService, ent };
+  </script>
+</body>
+</html>

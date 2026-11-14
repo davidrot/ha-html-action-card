@@ -1,0 +1,200 @@
+<!--
+  Kitchen timer · three buttons, like the real thing
+
+  MIN and SEC set the time (hold to run up), START/STOP starts, pauses and resumes.
+  Press MIN and SEC together, or tap CLEAR, to reset. When time is up it beeps and blinks.
+
+  Needs one Timer helper: Settings → Devices & services → Helpers → Create helper → Timer.
+  Put its entity id into TIMER at the top of the script. Because the countdown lives in
+  Home Assistant, every dashboard shows the same time and automations can react to it.
+  Paste the whole file into the card editor.
+-->
+<style>
+  /* no card frame: the timer is the card */
+  ha-card { background: none; border: none; box-shadow: none; }
+
+  .timer { display: grid; place-items: center; padding: 10px; user-select: none; -webkit-user-select: none; }
+  .case {
+    box-sizing: border-box; width: min(100%, 300px); aspect-ratio: 1; padding: 6%;
+    background: linear-gradient(150deg, #b3d2f1, #7eaee0); border-radius: 17%;
+    box-shadow: 0 12px 26px rgba(40, 80, 130, .3), inset 0 2px 3px rgba(255, 255, 255, .7), inset 0 -5px 9px rgba(30, 70, 120, .28);
+  }
+  .face {
+    position: relative; box-sizing: border-box; height: 100%; padding: 9% 7% 6%;
+    display: flex; flex-direction: column;
+    background: linear-gradient(#ffffff, #eff2f6); border-radius: 13%;
+    box-shadow: inset 0 0 0 1px rgba(40, 80, 130, .12);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .led { position: absolute; top: 4.5%; right: 9%; width: 11%; height: 4.5%; border-radius: 99px; background: #b9d4ef; transition: background .2s; }
+  .running .led { background: #4d97e0; }
+  .ringing .led { animation: ring .5s steps(2) infinite; }
+  @keyframes ring { 50% { background: #ff6b5e; } }
+
+  .lcd {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 1.5%; padding: 0 3%;
+    background: linear-gradient(#c3ccb6, #d2d9c6); border: 2px solid #98a18e; border-radius: 7px;
+    box-shadow: inset 0 3px 7px rgba(0, 0, 0, .28);
+  }
+  .d { height: 74%; aspect-ratio: 44 / 80; }
+  .d svg { display: block; height: 100%; transform: skewX(-5deg); }
+  .d polygon { fill: #23281f; opacity: .07; }
+  .d polygon.on { opacity: .9; }
+  .unit { align-self: flex-start; margin: 14% 1% 0 0; font-size: 11px; font-weight: 700; color: #23281f; opacity: .8; }
+  .colon { display: grid; gap: 14px; margin: 0 1.5%; }
+  .colon i { width: 7px; height: 7px; background: #23281f; opacity: .9; }
+  .running .colon { animation: colon 1s steps(2) infinite; }
+  @keyframes colon { 50% { opacity: .15; } }
+
+  .clear { position: relative; width: 60%; height: 7px; margin: 7% 0 1.5% 3%; border: 1.5px solid #aab3be; border-bottom: 0; cursor: pointer; }
+  .clear span { position: absolute; left: 50%; top: -8px; transform: translateX(-50%); padding: 0 6px; background: #f8f9fb; color: #8b96a3; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+
+  .buttons { display: flex; justify-content: space-between; }
+  .buttons button {
+    width: 29%; aspect-ratio: 1; padding: 0; cursor: pointer; touch-action: none;
+    color: #8b96a3; font: 700 13px/1.15 ui-sans-serif, system-ui, sans-serif; letter-spacing: .04em;
+    background: linear-gradient(#ffffff, #eceff3); border: 1.5px solid #c3cad3; border-radius: 50%;
+    box-shadow: 0 3px 5px rgba(40, 60, 90, .18), inset 0 1px 0 #fff;
+    transition: transform .06s, box-shadow .06s;
+  }
+  .buttons button:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(40, 60, 90, .2), inset 0 2px 4px rgba(40, 60, 90, .15); }
+  .buttons .go { font-size: 11px; }
+  .buttons .go hr { width: 62%; margin: 2px auto; border: 0; border-top: 1.5px solid #c3cad3; }
+</style>
+
+<template id="digit">
+  <svg viewBox="0 0 44 80" aria-hidden="true">
+    <polygon data-s="a" points="9,3 35,3 29,11 15,11" />
+    <polygon data-s="b" points="37,5 37,37 33,39 29,35 29,13" />
+    <polygon data-s="c" points="37,43 37,75 29,67 29,45 33,41" />
+    <polygon data-s="d" points="9,77 35,77 29,69 15,69" />
+    <polygon data-s="e" points="7,43 7,75 15,67 15,45 11,41" />
+    <polygon data-s="f" points="7,5 7,37 11,39 15,35 15,13" />
+    <polygon data-s="g" points="13,40 16,36 28,36 31,40 28,44 16,44" />
+  </svg>
+</template>
+
+<div class="timer">
+  <div class="case">
+    <div class="face">
+      <div class="led"></div>
+      <div class="lcd" role="timer" aria-live="off">
+        <span class="d"></span><span class="d"></span><span class="unit">M</span>
+        <span class="colon"><i></i><i></i></span>
+        <span class="d"></span><span class="d"></span><span class="unit">S</span>
+      </div>
+      <div class="clear" id="clear" title="Clear"><span>CLEAR</span></div>
+      <div class="buttons">
+        <button id="min" aria-label="Add a minute">MIN</button>
+        <button id="sec" aria-label="Add a second">SEC</button>
+        <button id="go" class="go" aria-label="Start or stop">START<hr>STOP</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TIMER = 'timer.kitchen';
+
+  const root = document.querySelector('.timer');
+  const MAX = 99 * 60 + 59;
+  const SEGMENTS = ['abcdef', 'bc', 'abged', 'abgcd', 'fgbc', 'afgcd', 'afgecd', 'abc', 'abcdefg', 'abfgcd'];
+
+  // Build the four seven-segment digits from the <template>.
+  const digits = [...root.querySelectorAll('.d')].map((slot) => {
+    slot.append(document.getElementById('digit').content.cloneNode(true));
+    return [...slot.querySelectorAll('polygon')];
+  });
+  const show = (total) => {
+    const m = Math.floor(total / 60), s = total % 60;
+    [Math.floor(m / 10), m % 10, Math.floor(s / 10), s % 10].forEach((n, i) =>
+      digits[i].forEach((seg) => seg.classList.toggle('on', SEGMENTS[n].includes(seg.dataset.s))));
+  };
+
+  let preset = 0;      // seconds chosen with MIN / SEC
+  let beeper = null;   // interval while the alarm rings
+  let audio = null;
+
+  const hms = (text) => String(text || '').split(':').reduce((sum, part) => sum * 60 + Number(part), 0);
+  const state = () => card.state(TIMER);
+  const remaining = () => {
+    if (state() === 'active') return Math.max(0, Math.ceil((Date.parse(card.attr(TIMER, 'finishes_at')) - card.now()) / 1000));
+    if (state() === 'paused') return hms(card.attr(TIMER, 'remaining'));
+    return preset;
+  };
+  const render = () => {
+    show(Math.min(MAX, remaining()));
+    root.classList.toggle('running', state() === 'active');
+  };
+  card.effect(render); // re-runs when the timer changes, and every second while it runs
+
+  // ---- alarm ----
+  const beep = () => {
+    if (!audio) return;
+    const osc = audio.createOscillator(), gain = audio.createGain();
+    osc.frequency.value = 2000;
+    gain.gain.value = 0.08;
+    osc.connect(gain).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + 0.12);
+  };
+  const silence = () => {
+    clearInterval(beeper);
+    beeper = null;
+    root.classList.remove('ringing');
+  };
+  const ring = () => {
+    root.classList.add('ringing');
+    let count = 0;
+    beeper = setInterval(() => { beep(); if (++count > 120) silence(); }, 500);
+  };
+  card.onEntity(TIMER, (now, before) => {
+    const finished = before && now && before.state === 'active' && now.state === 'idle' &&
+      Date.now() >= Date.parse(before.attributes.finishes_at) - 2000;
+    if (finished) ring();
+  });
+  card.cleanup(() => audio && audio.close());
+
+  // ---- buttons ----
+  const add = (amount) => {
+    if (state() === 'active' || state() === 'paused') return;
+    preset = Math.min(MAX, preset + amount);
+    render();
+  };
+  const clear = () => {
+    silence();
+    preset = 0;
+    if (state() === 'active' || state() === 'paused') card.call('timer', 'cancel', { entity_id: TIMER });
+    render();
+  };
+  const startStop = () => {
+    if (state() === 'active') return card.call('timer', 'pause', { entity_id: TIMER });
+    if (state() === 'paused') return card.call('timer', 'start', { entity_id: TIMER });
+    if (preset === 0) return;
+    const pad = (n) => String(n).padStart(2, '0');
+    card.call('timer', 'start', { entity_id: TIMER, duration: `00:${pad(Math.floor(preset / 60))}:${pad(preset % 60)}` });
+  };
+
+  const down = new Set();
+  let repeat = null;
+  const release = (id) => { down.delete(id); clearTimeout(repeat); clearInterval(repeat); };
+  for (const [id, amount] of [['min', 60], ['sec', 1]]) {
+    const button = document.getElementById(id);
+    button.addEventListener('pointerdown', () => {
+      if (!audio && window.AudioContext) audio = new AudioContext(); // sound needs a first tap
+      if (beeper) return silence();
+      down.add(id);
+      if (down.size === 2) return clear(); // MIN + SEC together
+      add(amount);
+      repeat = setTimeout(() => { repeat = setInterval(() => add(amount), 110); }, 450); // hold to run up
+    });
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) button.addEventListener(type, () => release(id));
+    button.addEventListener('click', (e) => { if (e.detail === 0) add(amount); }); // keyboard
+  }
+  document.getElementById('go').addEventListener('click', () => {
+    if (!audio && window.AudioContext) audio = new AudioContext();
+    if (beeper) return silence();
+    startStop();
+  });
+  document.getElementById('clear').addEventListener('click', clear);
+</script>

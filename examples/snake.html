@@ -1,0 +1,176 @@
+<!--
+  Snake · yes, a game in a dashboard card
+
+  Works as it is. Two optional links to Home Assistant, set in the script:
+    LIGHT      a light that flashes every time the snake eats
+    HIGHSCORE  an input_number helper that keeps the best score for everyone in the house
+  Controls: arrow keys or WASD, swipe on the screen, or the buttons. Space or tap starts.
+  Paste the whole file into the card editor.
+-->
+<style>
+  .phone {
+    --lcd: #c7d3a0; --dark: #2f3a22; --case: #26303f;
+    padding: 16px 16px 14px; background: linear-gradient(160deg, #334155, var(--case));
+    border-radius: var(--ha-card-border-radius, 12px);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .screen {
+    position: relative; padding: 8px 8px 6px; color: var(--dark); background: var(--lcd);
+    border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, .35);
+  }
+  .hud { display: flex; justify-content: space-between; padding: 0 2px 5px; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+  canvas { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; border: 2px solid var(--dark); box-sizing: border-box; }
+  .msg {
+    position: absolute; inset: 30px 10px 8px; display: grid; place-items: center; text-align: center;
+    font-size: 15px; font-weight: 700; line-height: 1.7; letter-spacing: .08em; cursor: pointer;
+  }
+  .msg span { white-space: pre-line; padding: 8px 12px; background: var(--lcd); border: 2px solid var(--dark); }
+  .playing .msg { display: none; }
+
+  .pad { display: grid; grid-template-columns: repeat(3, 52px); gap: 6px; justify-content: center; margin-top: 14px; }
+  .pad button {
+    height: 44px; cursor: pointer; color: #dbe4f0; font-size: 16px;
+    background: #3d4c63; border: 0; border-radius: 10px; box-shadow: 0 3px 0 #18202c;
+  }
+  .pad button:active { transform: translateY(3px); box-shadow: none; }
+</style>
+
+<div class="phone">
+  <div class="screen">
+    <div class="hud"><span id="score">SCORE 0</span><span id="best">BEST 0</span></div>
+    <canvas width="20" height="20"></canvas>
+    <div class="msg"><span id="msg">SNAKE
+TAP OR SPACE</span></div>
+  </div>
+  <div class="pad">
+    <span></span><button data-dir="up" aria-label="Up">▲</button><span></span>
+    <button data-dir="left" aria-label="Left">◀</button><button data-dir="down" aria-label="Down">▼</button><button data-dir="right" aria-label="Right">▶</button>
+  </div>
+</div>
+
+<script>
+  const LIGHT = '';       // e.g. 'light.desk'
+  const HIGHSCORE = '';   // e.g. 'input_number.snake_highscore'
+
+  const SIZE = 20;
+  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+
+  const phone = document.querySelector('.phone');
+  const canvas = document.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const css = getComputedStyle(phone);
+  const LCD = css.getPropertyValue('--lcd').trim();
+  const DARK = css.getPropertyValue('--dark').trim();
+
+  let snake, dir, queue, food, score, best = 0, timer, playing = false;
+
+  const text = (id, value) => { document.getElementById(id).textContent = value; };
+  const free = () => {
+    for (;;) {
+      const p = [Math.floor(Math.random() * SIZE), Math.floor(Math.random() * SIZE)];
+      if (!snake.some((s) => s[0] === p[0] && s[1] === p[1])) return p;
+    }
+  };
+
+  function draw() {
+    ctx.fillStyle = LCD;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.fillStyle = DARK;
+    for (const [x, y] of snake) ctx.fillRect(x, y, 1, 1);
+    ctx.fillRect(food[0] + 0.25, food[1] + 0.25, 0.5, 0.5);
+  }
+
+  function start() {
+    snake = [[9, 10], [8, 10], [7, 10]];
+    dir = 'right';
+    queue = [];
+    score = 0;
+    food = free();
+    playing = true;
+    phone.classList.add('playing');
+    text('score', 'SCORE 0');
+    schedule();
+    draw();
+  }
+
+  function schedule() {
+    clearInterval(timer);
+    timer = setInterval(step, Math.max(70, 190 - score * 6)); // faster with every point
+  }
+
+  function step() {
+    const next = queue.shift();
+    // no U-turns
+    if (next && (DIRS[next][0] + DIRS[dir][0] !== 0 || DIRS[next][1] + DIRS[dir][1] !== 0)) dir = next;
+    const head = [snake[0][0] + DIRS[dir][0], snake[0][1] + DIRS[dir][1]];
+    const dead =
+      head[0] < 0 || head[1] < 0 || head[0] >= SIZE || head[1] >= SIZE ||
+      snake.some((s) => s[0] === head[0] && s[1] === head[1]);
+    if (dead) return over();
+
+    snake.unshift(head);
+    if (head[0] === food[0] && head[1] === food[1]) {
+      score++;
+      text('score', 'SCORE ' + score);
+      food = free();
+      schedule();
+      if (LIGHT) card.call('light', 'turn_on', { entity_id: LIGHT, flash: 'short' });
+    } else {
+      snake.pop();
+    }
+    draw();
+  }
+
+  function over() {
+    clearInterval(timer);
+    playing = false;
+    phone.classList.remove('playing');
+    text('msg', 'GAME OVER\nSCORE ' + score + '\nTAP OR SPACE');
+    if (score > best) {
+      best = score;
+      text('best', 'BEST ' + best);
+      if (HIGHSCORE) card.call('input_number', 'set_value', { entity_id: HIGHSCORE, value: best });
+    }
+  }
+
+  const turn = (name) => { if (playing && name) queue.push(name); };
+
+  // keyboard: only steals the arrow keys while a game is running
+  window.addEventListener('keydown', (e) => {
+    if (e.key === ' ' && !playing) { e.preventDefault(); return start(); }
+    const name = KEYS[e.key];
+    if (playing && name) { e.preventDefault(); turn(name); }
+  });
+  // buttons
+  phone.querySelector('.pad').addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-dir]');
+    if (b) turn(b.dataset.dir);
+  });
+  // tap to start, swipe to steer
+  let from;
+  const screen = phone.querySelector('.screen');
+  screen.addEventListener('pointerdown', (e) => { from = [e.clientX, e.clientY]; });
+  screen.addEventListener('pointerup', (e) => {
+    if (!from) return;
+    const dx = e.clientX - from[0], dy = e.clientY - from[1];
+    from = null;
+    if (!playing) return start();
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 16) return;
+    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+
+  // shared highscore from Home Assistant, if configured
+  if (HIGHSCORE) {
+    card.effect(() => {
+      const value = Number(card.state(HIGHSCORE));
+      if (value > best) best = value;
+      text('best', 'BEST ' + best);
+    });
+  }
+
+  snake = [[9, 10], [8, 10], [7, 10]];
+  food = [14, 10];
+  draw();
+</script>
