@@ -10,6 +10,12 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 
 > ⚠️ Alpha. Syntax may change before 1.0. Your HTML and scripts run unfiltered: only use markup you understand. The editor's security rating tells you what a card can do.
 
+<p align="center">
+  <a href="examples/kitchen-timer.html"><img src="docs/images/kitchen-timer.png" alt="Kitchen timer card" height="240"></a>
+  <a href="examples/panda.html"><img src="docs/images/panda.png" alt="Panda card that follows the cursor" height="240"></a>
+  <a href="examples/snake.html"><img src="docs/images/snake.png" alt="Snake game card" height="240"></a>
+</p>
+
 ## Contents
 
 - [Why](#why)
