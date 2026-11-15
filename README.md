@@ -9,14 +9,14 @@
 A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }}`, conditions with `data-show-if`, and Home Assistant actions with `data-event` + `data-action`. Need more? Drop in a `<script>`.
 
 <p align="center">
-  <a href="showroom/kitchen-timer/"><img src="showroom/kitchen-timer/screenshot.png" alt="Kitchen timer card" height="240"></a>
-  <a href="showroom/panda/"><img src="showroom/panda/screenshot.png" alt="Panda card that follows the cursor" height="240"></a>
-  <a href="showroom/snake/"><img src="showroom/snake/screenshot.png" alt="Snake game card" height="240"></a>
-  <a href="showroom/camera-control/"><img src="showroom/camera-control/screenshot.png" alt="Camera card with touch control" height="240"></a>
+  <a href="docs/media/demo.mp4"><img src="docs/images/dashboard.png" alt="HTML Action Cards on a Home Assistant dashboard: a pull-cord lamp, a turntable, a camera with touch control, a kitchen timer, a panda and Snake" width="900"></a>
 </p>
+
+<p align="center"><a href="docs/media/demo.mp4">▶ Watch the demo (1:19)</a>: the cards in Home Assistant, adding one, picking its entities in the form, the security rating.</p>
 
 ## Contents
 
+- [Quick look](#quick-look)
 - [Why](#why)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -26,6 +26,8 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 - [State](#state)
 - [Security rating](#security-rating)
 - [Showroom](#showroom)
+  - [Turntable](#turntable)
+  - [Pull-cord lamp](#pull-cord-lamp)
   - [Kitchen timer](#kitchen-timer)
   - [Camera control](#camera-control)
   - [Panda](#panda)
@@ -34,6 +36,56 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 - [Roadmap](#roadmap)
 - [Development](#development)
 - [License](#license)
+
+## Quick look
+
+Three small cards, each a few lines of HTML. The picture is what you get on the dashboard.
+
+### A counter you tap
+
+<img src="docs/images/quick-counter.png" alt="Blue button with a coffee cup and the number 3" width="300">
+
+```html
+<style>
+  button { font-size: 28px; padding: 14px 28px; border: 0; border-radius: 16px;
+           background: var(--primary-color); color: white; cursor: pointer; }
+</style>
+<button data-action="counter.increment" data-entity="counter.coffee">
+  ☕ {{ counter.coffee.state }}
+</button>
+```
+
+### A lamp that shows its state
+
+<img src="docs/images/quick-light.png" alt="Glowing light bulb above the text: Desk lamp is on" width="300">
+
+```html
+<style>
+  .bulb { font-size: 48px; cursor: pointer; filter: grayscale(1) opacity(.4); }
+  .bulb.on { filter: drop-shadow(0 0 14px gold); }
+</style>
+<div class="bulb {{ light.desk.state }}"
+     data-action="toggle" data-entity="light.desk">💡</div>
+<p>Desk lamp is {{ light.desk.state }}</p>
+```
+
+### A battery bar with a warning
+
+<img src="docs/images/quick-battery.png" alt="Red battery bar at 15 percent with the warning: Replace the battery" width="300">
+
+```html
+<style>
+  .bar { height: 10px; border-radius: 5px; background: #333; }
+  .fill { height: 100%; border-radius: 5px; background: #4caf50; }
+  .fill.low { background: #f44336; }
+</style>
+<p>Remote: {{ sensor.remote_battery.state }} %</p>
+<div class="bar">
+  <div class="fill {{ sensor.remote_battery.state < 20 ? 'low' : '' }}"
+       style="width: {{ sensor.remote_battery.state }}%"></div>
+</div>
+<p data-show-if="sensor.remote_battery.state < 20">⚠️ Replace the battery</p>
+```
 
 ## Why
 
@@ -128,6 +180,8 @@ Good to know:
 
 A card can declare the entities and settings it needs in a frontmatter block at the top, like a Home Assistant blueprint. The card editor then shows a form instead of code: pick your entities, done. **Edit code** switches to the full content.
 
+<img src="docs/images/editor.png" alt="Card editor with the security rating on top, the card's name and description, and an entity picker for the Timer helper" width="700">
+
 ```html
 ---
 name: Lamp switch
@@ -189,6 +243,20 @@ The rating reads text; it cannot prove a card is safe. A green card contains non
 ## Showroom
 
 Cards built with this card, ready to paste into the card editor. The full gallery is in [`showroom/`](showroom), and you can [add your own](CONTRIBUTING.md#add-a-card-to-the-showroom).
+
+The first two show what sets this card apart: real gestures, live state and animation that no option-based card offers.
+
+### Turntable
+
+<img src="showroom/turntable/screenshot.png" alt="Turntable card: the album cover spins on a red vinyl record, the tone arm lies on the record" width="360">
+
+A media player as a record player. The cover spins on the label, the vinyl takes on the cover's colour, and the tone arm lowers onto the record while music plays. Tap the record to play or pause, drag the arm to jump within the song. [`showroom/turntable`](showroom/turntable/)
+
+### Pull-cord lamp
+
+<img src="showroom/pull-cord-lamp/screenshot.png" alt="Glowing light bulb hanging from a cable, with a pull cord next to it" width="260">
+
+Pull the cord to switch a light. The cord springs back, the lamp swings, and the bulb glows with the light's real brightness. [`showroom/pull-cord-lamp`](showroom/pull-cord-lamp/)
 
 ### Kitchen timer
 

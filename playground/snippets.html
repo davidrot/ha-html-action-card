@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>html-action-card README snippets</title>
+  <style>
+    /* Home Assistant dark theme, so the README pictures look like a real dashboard */
+    body { margin: 16px; background: #111; font-family: Roboto, system-ui, sans-serif;
+           --primary-color: #03a9f4; --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b;
+           --card-background-color: #1c1c1c; --ha-card-border-radius: 12px; color: var(--primary-text-color); }
+    .row { display: flex; gap: 16px; align-items: flex-start; zoom: var(--zoom, 1); }
+    /* the card's own ha-card lives in its shadow root: frame the element itself */
+    html-action-card { display: block; width: 240px; padding: 14px 18px; box-sizing: border-box;
+              background: var(--card-background-color); border-radius: var(--ha-card-border-radius);
+              border: 1px solid #2c2c2c; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div class="row" id="row"></div>
+  <script type="module">
+    import '/src/main.ts';
+
+    // Same code as in the README "Quick look" section.
+    const SNIPPETS = {
+      counter: `<style>
+  button { font-size: 28px; padding: 14px 28px; border: 0; border-radius: 16px;
+           background: var(--primary-color); color: white; cursor: pointer; }
+</style>
+<button data-action="counter.increment" data-entity="counter.coffee">
+  ☕ {{ counter.coffee.state }}
+</button>`,
+      light: `<style>
+  .bulb { font-size: 48px; cursor: pointer; filter: grayscale(1) opacity(.4); }
+  .bulb.on { filter: drop-shadow(0 0 14px gold); }
+</style>
+<div class="bulb {{ light.desk.state }}"
+     data-action="toggle" data-entity="light.desk">💡</div>
+<p>Desk lamp is {{ light.desk.state }}</p>`,
+      battery: `<style>
+  .bar { height: 10px; border-radius: 5px; background: #333; }
+  .fill { height: 100%; border-radius: 5px; background: #4caf50; }
+  .fill.low { background: #f44336; }
+</style>
+<p>Remote: {{ sensor.remote_battery.state }} %</p>
+<div class="bar">
+  <div class="fill {{ sensor.remote_battery.state < 20 ? 'low' : '' }}"
+       style="width: {{ sensor.remote_battery.state }}%"></div>
+</div>
+<p data-show-if="sensor.remote_battery.state < 20">⚠️ Replace the battery</p>`,
+    };
+
+    const ent = (entity_id, state) => ({ entity_id, state, attributes: {}, last_changed: '', last_updated: '' });
+    const states = {
+      'counter.coffee': ent('counter.coffee', '3'),
+      'light.desk': ent('light.desk', 'on'),
+      'sensor.remote_battery': ent('sensor.remote_battery', '15'),
+    };
+    const cards = [];
+    const push = () => {
+      const hass = { connected: true, language: 'en', states: { ...states }, callService };
+      for (const c of cards) c.hass = hass;
+    };
+    async function callService(domain, service, data) {
+      const id = data.entity_id;
+      const cur = states[id];
+      if (service === 'increment') states[id] = ent(id, String(Number(cur.state) + 1));
+      if (service === 'toggle') states[id] = ent(id, cur.state === 'on' ? 'off' : 'on');
+      push();
+    }
+
+    // ?only=counter&zoom=2.5 renders one card large, for README pictures
+    const params = new URLSearchParams(location.search);
+    document.body.style.setProperty('--zoom', params.get('zoom') || '1');
+    for (const [name, content] of Object.entries(SNIPPETS).filter(([n]) => !params.get('only') || n === params.get('only'))) {
+      const card = document.createElement('html-action-card');
+      card.id = name;
+      document.getElementById('row').append(card);
+      card.setConfig({ type: 'custom:html-action-card', content });
+      cards.push(card);
+    }
+    push();
+    window.demo = { states, push };
+  </script>
+</body>
+</html>
