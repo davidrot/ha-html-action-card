@@ -8,12 +8,11 @@
 
 A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }}`, conditions with `data-show-if`, and Home Assistant actions with `data-event` + `data-action`. Need more? Drop in a `<script>`.
 
-> ⚠️ Alpha. Syntax may change before 1.0. Your HTML and scripts run unfiltered: only use markup you understand. The editor's security rating tells you what a card can do.
-
 <p align="center">
   <a href="examples/kitchen-timer.html"><img src="docs/images/kitchen-timer.png" alt="Kitchen timer card" height="240"></a>
   <a href="examples/panda.html"><img src="docs/images/panda.png" alt="Panda card that follows the cursor" height="240"></a>
   <a href="examples/snake.html"><img src="docs/images/snake.png" alt="Snake game card" height="240"></a>
+  <a href="examples/camera-control.html"><img src="docs/images/camera-control.png" alt="Camera card with touch control" height="240"></a>
 </p>
 
 ## Contents
@@ -25,6 +24,10 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 - [Scripts](#scripts)
 - [Security rating](#security-rating)
 - [Examples](#examples)
+  - [Kitchen timer](#kitchen-timer)
+  - [Camera control](#camera-control)
+  - [Panda](#panda)
+  - [Snake](#snake)
 - [Use with AI](#use-with-ai)
 - [Roadmap](#roadmap)
 - [Development](#development)
@@ -135,12 +138,31 @@ The rating reads text; it cannot prove a card is safe. A green card contains non
 
 ## Examples
 
-Ready to paste into the card editor, in [`examples/`](examples):
+Ready to paste into the card editor. The files are in [`examples/`](examples).
 
-- [`kitchen-timer.html`](examples/kitchen-timer.html): a three-button kitchen timer backed by a Timer helper.
-- [`camera-control.html`](examples/camera-control.html): the live camera picture is the joystick. Press an edge to move the camera.
-- [`panda.html`](examples/panda.html): a panda that holds a sign and follows your cursor, without a card frame.
-- [`snake.html`](examples/snake.html): a game in a dashboard card.
+### Kitchen timer
+
+<img src="docs/images/kitchen-timer.png" alt="Kitchen timer card" width="220">
+
+A three-button kitchen timer backed by a Timer helper, so every dashboard shows the same countdown. [`kitchen-timer.html`](examples/kitchen-timer.html)
+
+### Camera control
+
+<img src="docs/images/camera-control.png" alt="Camera card with touch control" width="420">
+
+The live camera picture is the joystick: press an edge to move the camera. No script. [`camera-control.html`](examples/camera-control.html)
+
+### Panda
+
+<img src="docs/images/panda.png" alt="Panda card that follows the cursor" width="220">
+
+A panda that holds a sign and follows your cursor, without a card frame. [`panda.html`](examples/panda.html)
+
+### Snake
+
+<img src="docs/images/snake.png" alt="Snake game card" width="200">
+
+A game in a dashboard card. [`snake.html`](examples/snake.html)
 
 Run `npm run dev` and open `/playground/examples.html` to try them against a mock Home Assistant.
 
