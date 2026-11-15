@@ -34,6 +34,11 @@
     import '/src/main.ts';
     import { analyze } from '/src/analyze/index.ts';
 
+    const INPUTS = {
+      'kitchen-timer': { timer: 'timer.kitchen' },
+      'camera-control': { camera: 'camera.living_room', up: 'button.camera_move_up', down: 'button.camera_move_down', left: 'button.camera_move_left', right: 'button.camera_move_right' },
+      snake: { light: 'light.desk', highscore: 'input_number.snake_highscore' },
+    };
     const params = new URLSearchParams(location.search);
     const only = params.get('only');
     const EXAMPLES = ['kitchen-timer', 'panda', 'snake', 'camera-control'].filter((n) => !only || n === only);
@@ -105,7 +110,7 @@
       caption.textContent = `${name} · rating ${analyze(content).severity}`;
       const card = document.createElement('html-action-card');
       card.id = name;
-      card.setConfig({ type: 'custom:html-action-card', content });
+      card.setConfig({ type: 'custom:html-action-card', content, inputs: INPUTS[name] });
       figure.append(caption, card);
       document.getElementById('gallery').append(figure);
       cards.push(card);

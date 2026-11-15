@@ -16,7 +16,7 @@ Run `npm test` and `npm run build` before you open a pull request.
 ## Add a card to the showroom
 
 1. Create a folder `showroom/<your-card>/` (lowercase, words separated by `-`) with three files:
-   - `card.html`: the card, exactly as you paste it into the card editor. Start with a comment that says what it does and which entities to replace.
+   - `card.html`: the card, exactly as you paste it into the card editor. It starts with a frontmatter (`name`, `description`, `author`) and declares the entities it needs as `inputs`, so users pick them in a form instead of editing code.
    - `screenshot.png`: one picture of the card, at most 400 KB.
    - `README.md`: copy one from an existing card and fill in the title, description, **Needs**, **Rating** and **Author**.
 2. Add a row for your card to the table in `showroom/README.md`.
@@ -25,7 +25,7 @@ Run `npm test` and `npm run build` before you open a pull request.
 
 Rules:
 
-- Use placeholder entities (`light.living_room`), never tokens, passwords or private addresses.
+- Let users pick entities through `inputs`; never put tokens, passwords or private addresses into a card.
 - The screenshot shows the card only, without private details.
 - A card rated red needs a line `- **Why red:** …` in its README that explains why it needs what it does. It may still be declined.
 - Cards should work in a narrow dashboard column as well as a wide one.

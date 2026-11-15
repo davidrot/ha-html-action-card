@@ -1,6 +1,6 @@
 # Showroom
 
-Cards built with HTML Action Card. Open one, copy its `card.html` into the card editor, and replace the entities with yours.
+Cards built with HTML Action Card. Open one, paste its `card.html` into the card editor, and pick your entities in the form that appears.
 
 | | Card | Rating | Author |
 |---|---|---|---|

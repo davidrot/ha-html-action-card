@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { analyze } from '../src/analyze';
+import { splitFrontmatter } from '../src/render/frontmatter';
 
 /**
  * Keeps the showroom honest: every card has its files, a screenshot of sane size,
@@ -41,6 +42,17 @@ describe('showroom', () => {
       if (actual === 'red') {
         expect(read('README.md'), `a red card needs a "- **Why red:**" line`).toMatch(/\*\*Why red:\*\*\s*\S/);
       }
+    });
+
+    it('starts with a frontmatter: name, description, author, and every used input declared', () => {
+      const html = read('card.html');
+      const { meta, error } = splitFrontmatter(html);
+      expect(error).toBeUndefined();
+      expect(meta?.name, 'frontmatter needs a name').toBeTruthy();
+      expect(meta?.description, 'frontmatter needs a description').toBeTruthy();
+      expect(meta?.author, 'frontmatter needs an author').toBeTruthy();
+      const undeclared = analyze(html).findings.filter((f) => f.message.includes('not declared'));
+      expect(undeclared.map((f) => f.message)).toEqual([]);
     });
 
     it('names its author and what it needs', () => {

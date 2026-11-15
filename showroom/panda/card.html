@@ -1,11 +1,21 @@
-<!--
-  Panda · holds a sign and watches your cursor
-
-  No background and no card frame, so it sits on any dashboard.
-  Write what you like on the sign. A live value works too, for example:
-    <p>Living room: {{ sensor.living_room_temperature.state }} °C</p>
-  Paste the whole file into the card editor.
--->
+---
+name: Panda
+description: >-
+  A panda that holds a sign and follows your cursor. No background and no card frame,
+  so it sits on any dashboard.
+author: davidrot
+inputs:
+  title:
+    name: Sign title
+    default: html-action-card
+    selector:
+      text: {}
+  text:
+    name: Sign text
+    default: Any HTML you like, in one card.
+    selector:
+      text: {}
+---
 <style>
   /* transparent: no card frame, no background */
   ha-card { background: none; border: none; box-shadow: none; }
@@ -65,8 +75,8 @@
   </svg>
 
   <div class="sign">
-    <h3>html-action-card</h3>
-    <p>Any HTML you like, in one card.</p>
+    <h3>{{ input.title }}</h3>
+    <p>{{ input.text }}</p>
   </div>
   <div class="paws"><i></i><i></i></div>
 </div>

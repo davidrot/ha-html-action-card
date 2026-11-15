@@ -1,15 +1,37 @@
-<!--
-  Camera with touch control · the picture is the joystick
-
-  Shows the live camera picture. Press the top, bottom, left or right part of the picture
-  to move the camera that way; keep pressing to keep moving. No script, rating green.
-
-  For pan/tilt cameras that expose "move" buttons (for example Tapo). Replace:
-    camera.living_room                  your camera (4 places)
-    button.camera_move_up / down / left / right   its move buttons
-  If your camera has no live stream in Home Assistant, use the snapshot line instead (see below).
-  Paste the whole file into the card editor.
--->
+---
+name: Camera control
+description: >-
+  The live camera picture is the joystick. Press the top, bottom, left or right part of
+  the picture to move the camera; keep pressing to keep moving. For pan/tilt cameras with
+  move buttons, for example Tapo.
+author: davidrot
+inputs:
+  camera:
+    name: Camera
+    selector:
+      entity:
+        domain: camera
+  up:
+    name: Move up button
+    selector:
+      entity:
+        domain: button
+  down:
+    name: Move down button
+    selector:
+      entity:
+        domain: button
+  left:
+    name: Move left button
+    selector:
+      entity:
+        domain: button
+  right:
+    name: Move right button
+    selector:
+      entity:
+        domain: button
+---
 <style>
   .cam {
     position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #0c0f14;
@@ -53,17 +75,17 @@
 
 <div class="cam">
   <!-- live stream -->
-  <img alt="" data-show-if="camera.living_room.state != unavailable"
-       src="/api/camera_proxy_stream/camera.living_room?token={{ camera.living_room.attributes.access_token }}">
+  <img alt="" data-show-if="input.camera.state != unavailable"
+       src="/api/camera_proxy_stream/{{ input.camera }}?token={{ input.camera.attributes.access_token }}">
   <!-- snapshot instead, refreshed every 2 seconds:
-  <img alt="" src="{{ camera.living_room.attributes.entity_picture }}&t={{ Math.floor(now() / 2000) }}">
+  <img alt="" src="{{ input.camera.attributes.entity_picture }}&t={{ Math.floor(now() / 2000) }}">
   -->
-  <div class="offline" data-show-if="camera.living_room.state == unavailable">Camera is offline</div>
+  <div class="offline" data-show-if="input.camera.state == unavailable">Camera is offline</div>
 
-  <button class="zone up" aria-label="Move up" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_up"></button>
-  <button class="zone left" aria-label="Move left" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_left"></button>
-  <button class="zone right" aria-label="Move right" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_right"></button>
-  <button class="zone down" aria-label="Move down" data-event="press" data-repeat="400" data-action="button.press" data-entity="button.camera_move_down"></button>
+  <button class="zone up" aria-label="Move up" data-event="press" data-repeat="400" data-action="button.press" data-entity="{{ input.up }}"></button>
+  <button class="zone left" aria-label="Move left" data-event="press" data-repeat="400" data-action="button.press" data-entity="{{ input.left }}"></button>
+  <button class="zone right" aria-label="Move right" data-event="press" data-repeat="400" data-action="button.press" data-entity="{{ input.right }}"></button>
+  <button class="zone down" aria-label="Move down" data-event="press" data-repeat="400" data-action="button.press" data-entity="{{ input.down }}"></button>
 
-  <div class="label">{{ camera.living_room.attributes.friendly_name }}</div>
+  <div class="label">{{ input.camera.attributes.friendly_name }}</div>
 </div>

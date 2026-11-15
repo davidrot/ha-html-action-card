@@ -1,14 +1,18 @@
-<!--
-  Kitchen timer · three buttons, like the real thing
-
-  MIN and SEC set the time (hold to run up), START/STOP starts, pauses and resumes.
-  Press MIN and SEC together, or tap CLEAR, to reset. When time is up it beeps and blinks.
-
-  Needs one Timer helper: Settings → Devices & services → Helpers → Create helper → Timer.
-  Put its entity id into TIMER at the top of the script. Because the countdown lives in
-  Home Assistant, every dashboard shows the same time and automations can react to it.
-  Paste the whole file into the card editor.
--->
+---
+name: Kitchen timer
+description: >-
+  A three-button kitchen timer. MIN and SEC set the time (hold to run up), START/STOP
+  starts, pauses and resumes, MIN and SEC together or CLEAR resets. Beeps and blinks
+  when time is up. The countdown lives in a Timer helper, so every dashboard shows it.
+author: davidrot
+inputs:
+  timer:
+    name: Timer helper
+    description: Create one under Settings → Devices & services → Helpers → Timer.
+    selector:
+      entity:
+        domain: timer
+---
 <style>
   /* no card frame: the timer is the card */
   ha-card { background: none; border: none; box-shadow: none; }
@@ -99,7 +103,7 @@
 </div>
 
 <script>
-  const TIMER = 'timer.kitchen';
+  const TIMER = card.input('timer') || '';
 
   const root = document.querySelector('.timer');
   const MAX = 99 * 60 + 59;
@@ -133,7 +137,9 @@
     // Without the helper nothing can start: say so instead of staying silent.
     const setup = document.getElementById('setup');
     setup.hidden = state() !== undefined;
-    setup.textContent = `Timer helper "${TIMER}" not found. Create a Timer helper and set TIMER in the script.`;
+    setup.textContent = TIMER
+      ? `Timer helper "${TIMER}" not found.`
+      : 'Choose a Timer helper in the card editor.';
   };
   card.effect(render); // re-runs when the timer changes, and every second while it runs
 
