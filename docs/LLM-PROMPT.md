@@ -16,4 +16,22 @@ Expressions: entities are Home Assistant state objects and you must always name 
 
 Scripts (only when the building blocks are not enough; multiple events per element need a script): `<script>` runs verbatim with `card`, `document` (searches inside the card) and `hass`. `card.call(domain, service, data)`, `card.navigate(path)`, `card.moreInfo(id)`, `card.toggle(id)`, `card.state(id)`, `card.attr(id, name)`, `card.effect(fn)` (re-runs when entities read inside change), `card.expose({ fn })` (make functions available to `{{ }}`).
 
-Rules: use only entity IDs the user gave you. Prefer building blocks over scripts. Never use external resources unless asked. Add `data-confirm` for locks, alarms and garage doors.
+Inputs: start the content with a frontmatter block that declares the entities and settings the card needs, with Home Assistant blueprint selectors:
+```
+---
+name: Card name
+description: What it does.
+author: you
+inputs:
+  lamp:
+    name: Lamp
+    selector:
+      entity:
+        domain: light
+---
+```
+Then use `{{ input.lamp }}` for the entity id (e.g. `data-entity="{{ input.lamp }}"`), `{{ input.lamp.state }}` and `{{ input.lamp.attributes.x }}` for its state, and `card.input('lamp')` in scripts. Prefer inputs over hard-coded entity ids.
+
+State: script variables live while the card is shown; `card.store.get(key, fallback)` / `card.store.set(key, value)` keep JSON across a reload in this browser; Home Assistant helpers (`input_number`, `input_text`, …) share state across devices.
+
+Rules: use only entity IDs the user gave you, or declare them as inputs. Prefer building blocks over scripts. Never use external resources unless asked. Add `data-confirm` for locks, alarms and garage doors.

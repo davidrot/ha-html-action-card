@@ -9,4 +9,7 @@ First public alpha.
 - Live updates through dependency tracking, including `now()` and `relative()`.
 - `data-event` (`tap`, `dbltap`, `hold`, `press` with repeat, `release`) and `data-action` (services, `toggle`, `more-info`, `navigate`, `url`), with `data-confirm`.
 - Scripts (classic, module, `src`) with the `card` API. Timers, listeners and observers are released with the card.
+- Blueprint-style frontmatter: a card declares its entities and settings as `inputs` with Home Assistant selectors, and the editor shows a form for them.
+- `card.store` keeps small values across a page reload.
 - Card editor with a live security rating. Nothing is blocked.
+- Showroom with ready-to-use cards and a contribution guide.

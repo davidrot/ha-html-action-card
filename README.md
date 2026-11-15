@@ -22,6 +22,8 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 - [Quick start](#quick-start)
 - [The four building blocks](#the-four-building-blocks)
 - [Scripts](#scripts)
+- [Inputs](#inputs)
+- [State](#state)
 - [Security rating](#security-rating)
 - [Showroom](#showroom)
   - [Kitchen timer](#kitchen-timer)
@@ -112,7 +114,7 @@ Elements get `is-unavailable` and `is-error` classes when relevant. Missing enti
 </script>
 ```
 
-Your HTML and JavaScript run **as written**, like on any web page. Because the card uses Shadow DOM, scripts receive a `document` shim that searches inside the card, plus `card` (`call`, `action`, `navigate`, `moreInfo`, `toggle`, `state`, `attr`, `effect`, `expose`, `onEntity`, `on`, `$`, `cleanup`) and `hass`. Scripts run once per render, before the first state is evaluated (so `card.expose` functions work in `{{ }}`). Multiple events on one element? Use a script.
+Your HTML and JavaScript run **as written**, like on any web page. Because the card uses Shadow DOM, scripts receive a `document` shim that searches inside the card, plus `card` (`call`, `action`, `navigate`, `moreInfo`, `toggle`, `state`, `attr`, `effect`, `expose`, `onEntity`, `on`, `$`, `cleanup`, `input`, `store`) and `hass`. Scripts run once per render, before the first state is evaluated (so `card.expose` functions work in `{{ }}`). Multiple events on one element? Use a script.
 
 Good to know:
 - `hass` is live in classic scripts. `type="module"` scripts get `card` and `document` too (`hass` is a snapshot there, use `card.hass`).
@@ -121,6 +123,54 @@ Good to know:
 - `document.body` is the card's content, and `DOMContentLoaded` listeners run right away.
 - Each script block is isolated. Share functions through `card.expose` or `window`.
 - A failing script is reported in the console and the following scripts still run. Scripts added later with `innerHTML` do not run (browser rule).
+
+## Inputs
+
+A card can declare the entities and settings it needs in a frontmatter block at the top, like a Home Assistant blueprint. The card editor then shows a form instead of code: pick your entities, done. **Edit code** switches to the full content.
+
+```html
+---
+name: Lamp switch
+description: One button for one light.
+author: you
+inputs:
+  lamp:
+    name: Lamp
+    selector:
+      entity:
+        domain: light
+  label:
+    name: Label
+    default: Lamp
+    selector:
+      text: {}
+---
+<button data-action="toggle" data-entity="{{ input.lamp }}">
+  {{ input.label }}: {{ input.lamp.state }}
+</button>
+```
+
+- Selectors are the same as in blueprints (`entity`, `number`, `text`, `boolean`, …).
+- `{{ input.lamp }}` is the picked value. For an entity, `{{ input.lamp.state }}` and `{{ input.lamp.attributes.brightness }}` read that entity.
+- Scripts read inputs with `card.input('lamp')`.
+- The picked values are stored next to the content (`inputs:` in the card config), so a newer version of a card replaces the content without losing them.
+
+## State
+
+Every card can keep information, also across a page reload. Where it lives is up to the card:
+
+- **While the card is shown:** plain variables in a `<script>`.
+- **Across a reload, in this browser:** `card.store`.
+
+  ```js
+  const best = card.store.get('best', 0);
+  card.store.set('best', best + 1);
+  ```
+
+  Values are stored as JSON in the browser and shared by all cards with the same frontmatter `name`.
+- **Across devices and users:** a Home Assistant helper (`input_number`, `input_text`, `input_boolean`, …), read with `{{ }}` or `card.state()` and written with an action such as `input_number.set_value`. Automations can use it too.
+
+The [Snake](#snake) card uses both: its best score survives a reload with `card.store`, and is shared through a helper if you pick one.
 
 ## Security rating
 
@@ -172,7 +222,7 @@ Paste [`docs/LLM-PROMPT.md`](docs/LLM-PROMPT.md) into your assistant, describe t
 
 ## Roadmap
 
-Formatting helpers, entity picker, reusable templates, card-picker suggestions.
+Formatting helpers, importing cards from a link, card-picker suggestions.
 
 ## Development
 
