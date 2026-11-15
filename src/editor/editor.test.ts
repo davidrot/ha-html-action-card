@@ -147,6 +147,89 @@ describe('security rating in the editor', () => {
   });
 });
 
+describe('form mode for cards with inputs', () => {
+  const CARD = `---
+name: Lamp switch
+description: One button.
+author: someone
+inputs:
+  lamp:
+    name: Lamp
+    description: The light to switch.
+    selector:
+      entity:
+        domain: light
+  label:
+    name: Label
+    default: Lamp
+---
+<button data-entity="{{ input.lamp }}">{{ input.label }}</button>`;
+  const view = (id: string) => editor.shadowRoot!.getElementById(id)!;
+
+  it('without inputs there is only the code', () => {
+    editor.setConfig({ type: 'custom:html-action-card', content: '<b>x</b>' });
+    expect(view('form-view').hidden).toBe(true);
+    expect(view('code-view').hidden).toBe(false);
+    expect(view('code-bar').hidden).toBe(true);
+  });
+
+  it('with inputs it opens as a form with name, description and one field per input', () => {
+    editor.setConfig({ type: 'custom:html-action-card', content: CARD, inputs: { lamp: 'light.desk' } });
+    expect(view('form-view').hidden).toBe(false);
+    expect(view('code-view').hidden).toBe(true);
+    expect(view('card-name').textContent).toBe('Lamp switch');
+    expect(view('card-meta').textContent).toBe('One button. · by someone');
+    const fields = Array.from(editor.shadowRoot!.querySelectorAll<HTMLInputElement>('#form input'));
+    expect(fields.map((f) => [f.name, f.value, f.placeholder])).toEqual([
+      ['lamp', 'light.desk', 'light.your_entity'],
+      ['label', '', 'Lamp'],
+    ]);
+    expect(view('rating').className).toBe('green');
+  });
+
+  it('a picked value is saved under inputs, without touching the content', () => {
+    editor.setConfig({ type: 'custom:html-action-card', content: CARD });
+    const field = editor.shadowRoot!.querySelector<HTMLInputElement>('#form input[name="lamp"]')!;
+    field.value = 'light.kitchen';
+    field.dispatchEvent(new Event('change'));
+    expect(events).toEqual([{ type: 'custom:html-action-card', content: CARD, inputs: { lamp: 'light.kitchen' } }]);
+  });
+
+  it('switches between form and code; the code keeps the inputs', () => {
+    editor.setConfig({ type: 'custom:html-action-card', content: CARD, inputs: { lamp: 'light.desk' } });
+    view('to-code').click();
+    expect(view('code-view').hidden).toBe(false);
+    expect(view('code-bar').hidden).toBe(false);
+    type('content', CARD + '<i></i>');
+    expect(events[0].inputs).toEqual({ lamp: 'light.desk' });
+    view('to-form').click();
+    expect(view('form-view').hidden).toBe(false);
+  });
+
+  it("uses Home Assistant's ha-form with the selectors when it is available", () => {
+    class FakeHaForm extends HTMLElement {
+      hass: unknown;
+      data: unknown;
+      schema: unknown;
+      computeLabel?: (s: { name: string }) => string;
+    }
+    if (!customElements.get('ha-form')) customElements.define('ha-form', FakeHaForm);
+    const fresh = document.createElement('html-action-card-editor') as HtmlActionCardEditor;
+    const seen: CardConfig[] = [];
+    fresh.addEventListener('config-changed', (e) => seen.push((e as CustomEvent).detail.config));
+    fresh.setConfig({ type: 'custom:html-action-card', content: CARD, inputs: { lamp: 'light.desk' } });
+    const form = fresh.shadowRoot!.querySelector('ha-form') as FakeHaForm;
+    expect(form.schema).toEqual([
+      { name: 'lamp', selector: { entity: { domain: 'light' } } },
+      { name: 'label', selector: { text: {} } },
+    ]);
+    expect(form.data).toEqual({ lamp: 'light.desk' });
+    expect(form.computeLabel!({ name: 'lamp' })).toBe('Lamp');
+    form.dispatchEvent(new CustomEvent('value-changed', { detail: { value: { lamp: 'light.desk', label: 'Desk' } } }));
+    expect(seen[0].inputs).toEqual({ lamp: 'light.desk', label: 'Desk' });
+  });
+});
+
 describe('card hooks for Lovelace', () => {
   it('getConfigElement returns the editor', () => {
     expect(HtmlActionCard.getConfigElement().localName).toBe('html-action-card-editor');
