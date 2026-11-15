@@ -9,10 +9,10 @@
 A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }}`, conditions with `data-show-if`, and Home Assistant actions with `data-event` + `data-action`. Need more? Drop in a `<script>`.
 
 <p align="center">
-  <a href="examples/kitchen-timer.html"><img src="docs/images/kitchen-timer.png" alt="Kitchen timer card" height="240"></a>
-  <a href="examples/panda.html"><img src="docs/images/panda.png" alt="Panda card that follows the cursor" height="240"></a>
-  <a href="examples/snake.html"><img src="docs/images/snake.png" alt="Snake game card" height="240"></a>
-  <a href="examples/camera-control.html"><img src="docs/images/camera-control.png" alt="Camera card with touch control" height="240"></a>
+  <a href="showroom/kitchen-timer/"><img src="showroom/kitchen-timer/screenshot.png" alt="Kitchen timer card" height="240"></a>
+  <a href="showroom/panda/"><img src="showroom/panda/screenshot.png" alt="Panda card that follows the cursor" height="240"></a>
+  <a href="showroom/snake/"><img src="showroom/snake/screenshot.png" alt="Snake game card" height="240"></a>
+  <a href="showroom/camera-control/"><img src="showroom/camera-control/screenshot.png" alt="Camera card with touch control" height="240"></a>
 </p>
 
 ## Contents
@@ -23,7 +23,7 @@ A Home Assistant Lovelace card for **plain HTML and CSS**. Add states with `{{ }
 - [The four building blocks](#the-four-building-blocks)
 - [Scripts](#scripts)
 - [Security rating](#security-rating)
-- [Examples](#examples)
+- [Showroom](#showroom)
   - [Kitchen timer](#kitchen-timer)
   - [Camera control](#camera-control)
   - [Panda](#panda)
@@ -136,33 +136,33 @@ Grey hints do not change the rating: typos like `data-acton`, a bare `{{ light.k
 
 The rating reads text; it cannot prove a card is safe. A green card contains none of the things above. Only paste markup you understand, especially from the internet or an AI.
 
-## Examples
+## Showroom
 
-Ready to paste into the card editor. The files are in [`examples/`](examples).
+Cards built with this card, ready to paste into the card editor. The full gallery is in [`showroom/`](showroom), and you can [add your own](CONTRIBUTING.md#add-a-card-to-the-showroom).
 
 ### Kitchen timer
 
-<img src="docs/images/kitchen-timer.png" alt="Kitchen timer card" width="220">
+<img src="showroom/kitchen-timer/screenshot.png" alt="Kitchen timer card" width="220">
 
-A three-button kitchen timer backed by a Timer helper, so every dashboard shows the same countdown. [`kitchen-timer.html`](examples/kitchen-timer.html)
+A three-button kitchen timer backed by a Timer helper, so every dashboard shows the same countdown. [`showroom/kitchen-timer`](showroom/kitchen-timer/)
 
 ### Camera control
 
-<img src="docs/images/camera-control.png" alt="Camera card with touch control" width="420">
+<img src="showroom/camera-control/screenshot.png" alt="Camera card with touch control" width="420">
 
-The live camera picture is the joystick: press an edge to move the camera. No script. [`camera-control.html`](examples/camera-control.html)
+The live camera picture is the joystick: press an edge to move the camera. No script. [`showroom/camera-control`](showroom/camera-control/)
 
 ### Panda
 
-<img src="docs/images/panda.png" alt="Panda card that follows the cursor" width="220">
+<img src="showroom/panda/screenshot.png" alt="Panda card that follows the cursor" width="220">
 
-A panda that holds a sign and follows your cursor, without a card frame. [`panda.html`](examples/panda.html)
+A panda that holds a sign and follows your cursor, without a card frame. [`showroom/panda`](showroom/panda/)
 
 ### Snake
 
-<img src="docs/images/snake.png" alt="Snake game card" width="200">
+<img src="showroom/snake/screenshot.png" alt="Snake game card" width="200">
 
-A game in a dashboard card. [`snake.html`](examples/snake.html)
+A game in a dashboard card. [`showroom/snake`](showroom/snake/)
 
 Run `npm run dev` and open `/playground/examples.html` to try them against a mock Home Assistant.
 
@@ -183,7 +183,7 @@ npm test
 npm run build      # dist/html-action-card.js
 ```
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

@@ -62,6 +62,7 @@
   }
   .buttons button:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(40, 60, 90, .2), inset 0 2px 4px rgba(40, 60, 90, .15); }
   .buttons .go { font-size: 3.5cqw; }
+  .setup { max-width: 300px; margin: 10px 0 0; text-align: center; font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; color: var(--error-color, #db4437); }
   .buttons .go hr { width: 62%; margin: .6cqw auto; border: 0; border-top: 1.5px solid #c3cad3; }
 </style>
 
@@ -94,6 +95,7 @@
       </div>
     </div>
   </div>
+  <p class="setup" id="setup" hidden></p>
 </div>
 
 <script>
@@ -128,6 +130,10 @@
   const render = () => {
     show(Math.min(MAX, remaining()));
     root.classList.toggle('running', state() === 'active');
+    // Without the helper nothing can start: say so instead of staying silent.
+    const setup = document.getElementById('setup');
+    setup.hidden = state() !== undefined;
+    setup.textContent = `Timer helper "${TIMER}" not found. Create a Timer helper and set TIMER in the script.`;
   };
   card.effect(render); // re-runs when the timer changes, and every second while it runs
 

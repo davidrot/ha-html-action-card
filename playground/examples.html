@@ -99,7 +99,7 @@
 
     for (const name of EXAMPLES) {
       // ?raw: the dev server would otherwise inject its own client script into the HTML
-      const content = (await import(/* @vite-ignore */ `/examples/${name}.html?raw`)).default;
+      const content = (await import(/* @vite-ignore */ `/showroom/${name}/card.html?raw`)).default;
       const figure = document.createElement('figure');
       const caption = document.createElement('figcaption');
       caption.textContent = `${name} · rating ${analyze(content).severity}`;

@@ -1,0 +1,31 @@
+title: "[Card] "
+body:
+  - type: markdown
+    attributes:
+      value: Show a card you built with HTML Action Card. Use placeholder entities and leave out tokens and private details.
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag a picture of the card here.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What it does
+    validations:
+      required: true
+  - type: textarea
+    id: card
+    attributes:
+      label: Card
+      description: The content you paste into the card editor.
+      render: html
+    validations:
+      required: true
+  - type: input
+    id: needs
+    attributes:
+      label: What it needs
+      description: Entities, helpers or devices.
