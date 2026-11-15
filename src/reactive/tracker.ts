@@ -79,6 +79,8 @@ export class Engine {
   disposed = false;
   /** Functions scripts made available to expressions via card.expose(). */
   readonly exposed = new Map<string, Fn>();
+  /** Card inputs (`input.<name>`): what the user picked, else the frontmatter default. */
+  inputs: Record<string, unknown> = {};
 
   private latest?: HomeAssistant;
   private scheduled = false;
@@ -97,6 +99,7 @@ export class Engine {
     });
     this.resolver = {
       entity: (id) => this.entity(id),
+      input: (name) => this.inputs[name],
       fn: (name) => this.exposed.get(name) ?? this.helpers.get(name) ?? resolveFunction(name, NO_FUNCTIONS),
     };
   }

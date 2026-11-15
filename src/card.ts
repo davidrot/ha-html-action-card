@@ -1,6 +1,7 @@
 import { ActionController } from './actions';
 import type { ControllerContext } from './actions';
 import { Binder } from './render/binder';
+import { resolveInputs, splitFrontmatter } from './render/frontmatter';
 import { protectExpressions } from './render/template';
 import { Engine } from './reactive/tracker';
 import { ScriptHost } from './script';
@@ -116,7 +117,9 @@ export class HtmlActionCard extends HTMLElement {
     content.id = 'content';
     // Verbatim, no sanitizing by design. Only `<` inside {{ }} is escaped so the HTML parser
     // cannot mistake `{{ a<b }}` for a tag.
-    content.innerHTML = protectExpressions(config.content);
+    const { meta, body, error } = splitFrontmatter(config.content);
+    if (error) this._warn(error);
+    content.innerHTML = protectExpressions(body);
     // Invisible until the first evaluation, but laid out: scripts may measure at start-up.
     content.style.visibility = 'hidden';
     card.append(content);
@@ -127,6 +130,7 @@ export class HtmlActionCard extends HTMLElement {
       refreshInterval: config.refresh_interval,
       onError: (message) => this._warn(message),
     });
+    engine.inputs = resolveInputs(meta, config.inputs);
     this._engine = engine;
     this._ready = false;
 
@@ -145,7 +149,7 @@ export class HtmlActionCard extends HTMLElement {
     this._actions = actions;
     actions.start();
 
-    const scripts = new ScriptHost({ engine, shadow: this._root, content, ctx });
+    const scripts = new ScriptHost({ engine, shadow: this._root, content, ctx, storeName: meta?.name });
     this._scripts = scripts;
 
     const start = () => {

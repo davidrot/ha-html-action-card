@@ -38,6 +38,18 @@ export interface CardApi {
   expose(fns: Record<string, unknown>): void;
   /** Run `fn` when the card is torn down. */
   cleanup(fn: () => void): void;
+
+  /** Value of a card input declared in the frontmatter (`input.<name>` in expressions). */
+  input(name: string): unknown;
+  /**
+   * Small storage that survives a page reload, kept in this browser. Values are JSON.
+   * Keys are shared by all cards with the same frontmatter `name`.
+   */
+  readonly store: {
+    get<T = unknown>(key: string, fallback?: T): T | undefined;
+    set(key: string, value: unknown): void;
+    remove(key: string): void;
+  };
 }
 
 export interface ApiDeps {
@@ -45,9 +57,18 @@ export interface ApiDeps {
   shadow: ShadowRoot;
   ctx: ControllerContext;
   cleanup: (fn: () => void) => void;
+  storeName?: string;
 }
 
-export function createCardApi({ engine, shadow, ctx, cleanup }: ApiDeps): CardApi {
+export function createCardApi({ engine, shadow, ctx, cleanup, storeName }: ApiDeps): CardApi {
+  const prefix = `html-action-card:${storeName || 'card'}:`;
+  const storage = (): Storage | undefined => {
+    try {
+      return window.localStorage;
+    } catch {
+      return undefined; // blocked (private mode, sandbox)
+    }
+  };
   /** Failures are reported (toast + console) and still reject for scripts that await. */
   const guard = (promise: Promise<void>): Promise<void> => {
     promise.catch((err) => {
@@ -108,6 +129,33 @@ export function createCardApi({ engine, shadow, ctx, cleanup }: ApiDeps): CardAp
         if (typeof fn === 'function') engine.exposed.set(name, fn as Fn);
       }
       engine.refreshAll(); // no-op before the first evaluation
+    },
+
+    input: (name) => engine.inputs[name],
+
+    store: {
+      get<T = unknown>(key: string, fallback?: T): T | undefined {
+        try {
+          const raw = storage()?.getItem(prefix + key);
+          return raw == null ? fallback : (JSON.parse(raw) as T);
+        } catch {
+          return fallback;
+        }
+      },
+      set(key: string, value: unknown): void {
+        try {
+          storage()?.setItem(prefix + key, JSON.stringify(value));
+        } catch (err) {
+          ctx.report(`card.store could not save "${key}": ${err instanceof Error ? err.message : String(err)}`);
+        }
+      },
+      remove(key: string): void {
+        try {
+          storage()?.removeItem(prefix + key);
+        } catch {
+          /* nothing to remove */
+        }
+      },
     },
 
     cleanup(fn) {

@@ -11,12 +11,15 @@ export interface Resolver {
    * in Home Assistant: `light.kitchen.state`, `light.kitchen.attributes.brightness`.
    */
   entity(entityId: string): unknown;
+  /** Value of a card input (`input.<name>`), from the frontmatter and the card config. */
+  input?(name: string): unknown;
   /** Resolve a callable by (dotted) name. Order is the caller's business. */
   fn(name: string): ((...args: unknown[]) => unknown) | undefined;
 }
 
 const NUMERIC = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 const BLOCKED = new Set(['__proto__', 'constructor', 'prototype']);
+const ENTITY_ID = /^[a-z0-9_]+\.[a-z0-9_]+$/;
 
 /** Number or numeric string -> number. Anything else (incl. "unavailable") -> undefined. */
 export function toNumber(v: unknown): number | undefined {
@@ -51,9 +54,17 @@ export function evaluate(e: Expr, r: Resolver): unknown {
       return e.v;
 
     case 'ref': {
-      let v: unknown = r.entity(e.entity);
-      // No default: a bare `light.kitchen` names no property and renders empty.
-      if (e.path.length === 0) return undefined;
+      let v: unknown;
+      if (e.entity.startsWith('input.') && r.input) {
+        // `input.timer` is the picked value (an entity id); `input.timer.state` reads that entity.
+        v = r.input(e.entity.slice(6));
+        if (e.path.length === 0) return v;
+        if (typeof v === 'string' && ENTITY_ID.test(v)) v = r.entity(v);
+      } else {
+        v = r.entity(e.entity);
+        // No default: a bare `light.kitchen` names no property and renders empty.
+        if (e.path.length === 0) return undefined;
+      }
       for (const key of e.path) {
         if (v == null || typeof v !== 'object' || BLOCKED.has(key)) return undefined;
         v = (v as Record<string, unknown>)[key];

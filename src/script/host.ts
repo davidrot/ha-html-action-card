@@ -22,6 +22,8 @@ export interface ScriptHostOptions {
   shadow: ShadowRoot;
   content: HTMLElement;
   ctx: ControllerContext;
+  /** Namespace for card.store: the card's name from the frontmatter. */
+  storeName?: string;
 }
 
 const externalScripts = new Map<string, Promise<void>>();
@@ -40,6 +42,7 @@ export class ScriptHost {
       shadow: o.shadow,
       ctx: o.ctx,
       cleanup: (fn) => this.resources.add(fn),
+      storeName: o.storeName,
     });
     this.scope = this.createScope();
   }

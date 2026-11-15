@@ -9,6 +9,7 @@
  */
 import { lookupBuiltin, parse } from '../expr';
 import type { Expr } from '../expr';
+import { splitFrontmatter } from '../render/frontmatter';
 import { parseTemplate } from '../render/template';
 import type { Finding, HomeAssistant, Report } from '../types';
 import { lineCounter, scan } from './scanner';
@@ -61,8 +62,11 @@ const SCRIPT_YELLOW: Array<[RegExp, string]> = [
   [/\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML\s*\(|document\s*\.\s*write\s*\(/, 'builds HTML from text at runtime'],
 ];
 
-export function analyze(html: string, options: AnalyzeOptions = {}): Report {
+export function analyze(content: string, options: AnalyzeOptions = {}): Report {
   const findings: Finding[] = [];
+  // The frontmatter is configuration, not markup: rate the body (same line numbers).
+  const { meta, body: html, error: frontmatterError } = splitFrontmatter(content);
+  if (frontmatterError) findings.push({ level: 'info', message: frontmatterError, line: 1 });
   const lineOf = lineCounter(html);
   const hass = options.hass;
   const tokens = scan(html);
@@ -87,6 +91,9 @@ export function analyze(html: string, options: AnalyzeOptions = {}): Report {
         } else if (!hasScript && !EXPRESSION_HELPERS.has(e.name) && !lookupBuiltin(e.name)) {
           add('info', `Expression calls ${e.name}(), but no script exposes it (card.expose)`, offset);
         }
+      } else if (e.t === 'ref' && e.entity.startsWith('input.')) {
+        const name = e.entity.slice(6);
+        if (!meta?.inputs[name]) add('info', `Input "${name}" is not declared in the frontmatter`, offset);
       } else if (e.t === 'ref') {
         if (e.path.length === 0) {
           add('info', `"${e.entity}" names no property and renders empty. Use ${e.entity}.state`, offset);

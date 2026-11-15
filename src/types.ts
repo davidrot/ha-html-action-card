@@ -20,6 +20,8 @@ export interface CardConfig {
    * Rendered verbatim inside the card's Shadow DOM, so styles stay inside the card.
    */
   content: string;
+  /** Values for the inputs declared in the content's frontmatter. */
+  inputs?: Record<string, unknown>;
   /** Ticker interval in ms for now()/relative(). Default 1000. */
   refresh_interval?: number;
 }
