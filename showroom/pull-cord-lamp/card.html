@@ -1,0 +1,162 @@
+---
+name: Pull-cord lamp
+description: >-
+  A lamp you switch by pulling its cord. The cord springs back, the lamp swings, and the
+  bulb follows the real light, also when it is switched elsewhere, glowing with its
+  brightness.
+author: davidrot
+inputs:
+  lamp:
+    name: Light
+    selector:
+      entity:
+        domain: light
+---
+<style>
+  /* no card frame: the lamp hangs straight from the top of the dashboard column */
+  ha-card { background: none; border: none; box-shadow: none; }
+
+  .lamp { width: min(100%, 300px); margin: 0 auto; user-select: none; -webkit-user-select: none; }
+  .lamp svg { display: block; width: 100%; overflow: visible; }
+
+  .swing { transform-origin: 150px -10px; }
+  .swing.go { animation: swing 1.7s ease-out; }
+  @keyframes swing {
+    15% { transform: rotate(4deg); } 38% { transform: rotate(-3deg); }
+    62% { transform: rotate(1.6deg); } 82% { transform: rotate(-.6deg); }
+  }
+
+  .cable { stroke: #5b5853; stroke-width: 3; }
+  .socket { fill: #3c3a37; }
+  .ridge { stroke: #57534d; stroke-width: 2; }
+  .glow { opacity: 0; transition: opacity .4s; }
+  .on .glow { opacity: var(--level, 1); }
+  .glass { fill: #e7e3db; stroke: #b9b3a8; stroke-width: 1.5; transition: fill .3s; }
+  .on .glass { fill: #fff4cf; stroke: #f3d27a; }
+  .filament { fill: none; stroke: #9a958b; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s; }
+  .on .filament { stroke: #ff9d1f; }
+
+  .cord { stroke: #6d6962; stroke-width: 2; }
+  .knob { cursor: grab; touch-action: none; outline: none; }
+  .knob:active { cursor: grabbing; }
+  .knob circle { fill: #c28a3a; stroke: #8c5f22; stroke-width: 2; }
+  .knob:focus-visible circle { stroke: var(--primary-color, #03a9f4); stroke-width: 3; }
+
+  .unavailable { opacity: .45; }
+  .hint { margin: 0; padding-bottom: 8px; text-align: center; font-size: 13px; color: var(--secondary-text-color, #888); }
+</style>
+
+<div class="lamp {{ input.lamp.state }}"
+     style="--level: {{ input.lamp.attributes.brightness ? input.lamp.attributes.brightness / 255 * 0.7 + 0.3 : 1 }}">
+  <svg viewBox="0 -10 300 300" role="img" aria-label="Lamp with a pull cord">
+    <defs>
+      <radialGradient id="halo">
+        <stop offset="0" stop-color="#ffd166" stop-opacity=".9" />
+        <stop offset=".45" stop-color="#ffd166" stop-opacity=".3" />
+        <stop offset="1" stop-color="#ffd166" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+
+    <g class="swing">
+      <line class="cable" x1="150" y1="-10" x2="150" y2="128" />
+      <circle class="glow" cx="150" cy="186" r="120" fill="url(#halo)" />
+      <rect class="socket" x="134" y="124" width="32" height="28" rx="4" />
+      <line class="ridge" x1="136" y1="132" x2="164" y2="132" />
+      <line class="ridge" x1="136" y1="140" x2="164" y2="140" />
+      <path class="glass" d="M137 152 C137 164 114 172 114 196 A36 36 0 0 0 186 196 C186 172 163 164 163 152 Z" />
+      <path class="filament" d="M144 152 L143 176 M156 152 L157 176 M143 176 C143 192 157 192 157 176" />
+    </g>
+
+    <line class="cord" x1="214" y1="-10" x2="214" y2="214" />
+    <g class="knob" tabindex="0" role="button" aria-label="Pull to switch the light">
+      <circle cx="214" cy="226" r="12" />
+    </g>
+  </svg>
+  <p class="hint" data-show-if="input.lamp">Pull the cord</p>
+  <p class="hint" data-show-if="!input.lamp">Choose a light in the card editor.</p>
+</div>
+
+<script>
+  const LAMP = card.input('lamp');
+  const svg = document.querySelector('.lamp svg');
+  const swing = document.querySelector('.swing');
+  const cord = document.querySelector('.cord');
+  const knob = document.querySelector('.knob');
+  const ball = knob.querySelector('circle');
+
+  const REST = 226;    // knob position
+  const MAX = 70;      // how far the cord stretches
+  const TRIGGER = 38;  // pull at least this far to switch
+
+  const place = (y) => {
+    ball.setAttribute('cy', y);
+    cord.setAttribute('y2', y - 12);
+  };
+  const svgY = (e) => {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX;
+    p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse()).y;
+  };
+
+  let start = null;
+  let frame;
+
+  knob.addEventListener('pointerdown', (e) => {
+    start = svgY(e);
+    cancelAnimationFrame(frame);
+    knob.setPointerCapture(e.pointerId);
+  });
+  knob.addEventListener('pointermove', (e) => {
+    if (start !== null) place(REST + Math.max(0, Math.min(MAX, svgY(e) - start)));
+  });
+
+  // Let go: switch if pulled far enough, then the cord springs back.
+  const letGo = (canSwitch = true) => {
+    let offset = Number(ball.getAttribute('cy')) - REST;
+    let speed = 0;
+    if (canSwitch && offset > TRIGGER && LAMP) card.toggle(LAMP);
+    const spring = () => {
+      speed = speed * 0.78 - offset * 0.22;
+      offset += speed;
+      place(REST + offset);
+      if (Math.abs(offset) > 0.3 || Math.abs(speed) > 0.3) frame = requestAnimationFrame(spring);
+      else place(REST);
+    };
+    spring();
+  };
+  const release = () => {
+    if (start === null) return;
+    start = null;
+    letGo();
+  };
+  knob.addEventListener('pointerup', release);
+  knob.addEventListener('pointercancel', release);
+
+  // Keyboard: Enter or Space pulls the cord, with the same animation as a real pull.
+  knob.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (start !== null || !LAMP) return;
+    card.toggle(LAMP); // switch right away, the animation only shows it
+    cancelAnimationFrame(frame);
+    let offset = 0;
+    const pull = () => {
+      offset = Math.min(TRIGGER + 14, offset + 7);
+      place(REST + offset);
+      if (offset < TRIGGER + 14) frame = requestAnimationFrame(pull);
+      else letGo(false);
+    };
+    pull();
+  });
+
+  // The lamp swings whenever the light really changes, whoever switched it.
+  if (LAMP) {
+    card.onEntity(LAMP, (now, before) => {
+      if (now?.state === before?.state) return;
+      swing.classList.remove('go');
+      void swing.getBoundingClientRect(); // restart the animation
+      swing.classList.add('go');
+    });
+  }
+</script>

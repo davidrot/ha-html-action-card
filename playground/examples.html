@@ -38,10 +38,12 @@
       'kitchen-timer': { timer: 'timer.kitchen' },
       'camera-control': { camera: 'camera.living_room', up: 'button.camera_move_up', down: 'button.camera_move_down', left: 'button.camera_move_left', right: 'button.camera_move_right' },
       snake: { light: 'light.desk', highscore: 'input_number.snake_highscore' },
+      'pull-cord-lamp': { lamp: 'light.desk' },
+      turntable: { player: 'media_player.living_room' },
     };
     const params = new URLSearchParams(location.search);
     const only = params.get('only');
-    const EXAMPLES = ['kitchen-timer', 'panda', 'snake', 'camera-control'].filter((n) => !only || n === only);
+    const EXAMPLES = ['turntable', 'pull-cord-lamp', 'kitchen-timer', 'panda', 'snake', 'camera-control'].filter((n) => !only || n === only);
     const width = params.get('width');
     if (width) document.getElementById('gallery').style.gridTemplateColumns = `repeat(auto-fill, ${Number(width)}px)`;
     if (only) {
@@ -56,7 +58,12 @@
       'timer.kitchen': ent('timer.kitchen', 'idle', { duration: '0:05:00' }),
       'camera.living_room': ent('camera.living_room', 'idle', { friendly_name: 'Living room', access_token: 'demo', entity_picture: '/api/camera_proxy/camera.living_room?token=demo' }),
       'input_number.snake_highscore': ent('input_number.snake_highscore', '0'),
-      'light.desk': ent('light.desk', 'off'),
+      'light.desk': ent('light.desk', 'on', { brightness: 200 }),
+      'media_player.living_room': ent('media_player.living_room', 'playing', {
+        media_title: 'Sunday Morning', media_artist: 'Demo Band', media_duration: 214, media_position: 61,
+        media_position_updated_at: new Date().toISOString(), supported_features: 1 | 2 | 16 | 32,
+        entity_picture: '/api/media_player_proxy/media_player.living_room?token=demo',
+      }),
     };
     for (const d of ['up', 'down', 'left', 'right']) states[`button.camera_move_${d}`] = ent(`button.camera_move_${d}`, 'unknown');
 
@@ -78,9 +85,16 @@
       for (const id of ids(data)) {
         const cur = states[id];
         if (!cur) continue;
-        if (id.startsWith('light.')) {
+        if (id.startsWith('media_player.')) {
+          const a = cur.attributes;
+          const at = Date.parse(a.media_position_updated_at);
+          const now = cur.state === 'playing' ? a.media_position + (Date.now() - at) / 1000 : a.media_position;
+          const next = service === 'media_seek' ? data.seek_position : now;
+          const state = service === 'media_play_pause' ? (cur.state === 'playing' ? 'paused' : 'playing') : cur.state;
+          patch[id] = ent(id, state, { ...a, media_position: next, media_position_updated_at: new Date().toISOString() });
+        } else if (id.startsWith('light.')) {
           const next = service === 'turn_on' ? 'on' : service === 'turn_off' ? 'off' : cur.state === 'on' ? 'off' : 'on';
-          if (next !== cur.state) patch[id] = ent(id, next);
+          if (next !== cur.state) patch[id] = ent(id, next, next === 'on' ? { brightness: 200 } : {});
         } else if (id.startsWith('timer.')) {
           clearTimeout(eggTimeout);
           const fmt = (sec) => `${Math.floor(sec / 3600)}:${String(Math.floor(sec / 60) % 60).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;

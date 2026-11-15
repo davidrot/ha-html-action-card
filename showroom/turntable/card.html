@@ -1,0 +1,227 @@
+---
+name: Turntable
+description: >-
+  A media player as a record player. The cover spins on the label, the vinyl takes on
+  the cover's colour, and the tone arm lowers onto the record while it plays and follows
+  the song. Tap the record to play or pause, drag the arm to jump within the song.
+author: davidrot
+inputs:
+  player:
+    name: Media player
+    selector:
+      entity:
+        domain: media_player
+---
+<style>
+  .deck {
+    container-type: inline-size;
+    --vinyl: #161616;
+    box-sizing: border-box; width: min(100%, 440px); margin: 0 auto; padding: 4cqw 4cqw 3.5cqw;
+    border-radius: var(--ha-card-border-radius, 12px);
+    background: linear-gradient(155deg, #4a3a2c, #2a2018 70%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+    color: #f3ebe1; user-select: none; -webkit-user-select: none;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .deck svg { display: block; width: 100%; overflow: visible; }
+
+  .platter { fill: #15110e; stroke: #5a4a3c; stroke-width: 1.5; }
+  .record { cursor: pointer; }
+  .spin { transform-origin: 150px 150px; animation: spin 1.8s linear infinite; animation-play-state: paused; }
+  .playing .spin { animation-play-state: running; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .vinyl { fill: var(--vinyl); transition: fill 1.2s; }
+  .groove { fill: none; stroke: rgba(255, 255, 255, .07); stroke-width: 1; }
+  .label-bg { fill: #c8573a; }
+  .mark { fill: rgba(255, 255, 255, .85); }
+
+  .arm { transform-origin: 312px 34px; transition: transform 1.2s ease-in-out; }
+  .arm.dragging { transition: none; }
+  .arm.can-seek { cursor: grab; }
+  .arm.dragging { cursor: grabbing; }
+  .arm-bar { fill: none; stroke: #d9d3c9; stroke-width: 5; stroke-linecap: round; }
+  .head { fill: #b9b2a7; }
+  .pivot { fill: #8e877c; stroke: #5a554e; stroke-width: 2; }
+  .weight { fill: #6f6a63; }
+
+  .info { margin-top: 2cqw; }
+  .info b {
+    display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    font-size: max(13px, 4.2cqw); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere;
+  }
+  .sub { display: flex; justify-content: space-between; gap: 3cqw; margin-top: .8cqw; font-size: max(11px, 3.3cqw); opacity: .65; }
+  .sub span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .time { flex: none; font-variant-numeric: tabular-nums; }
+  .setup { margin: 2cqw 0 0; font-size: 13px; text-align: center; color: #ffb4a8; }
+</style>
+
+<div class="deck {{ input.player.state }}">
+  <svg viewBox="0 0 340 300" role="img" aria-label="Turntable">
+    <defs>
+      <clipPath id="label"><circle cx="150" cy="150" r="44" /></clipPath>
+      <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+        <stop offset=".25" stop-color="#fff" stop-opacity="0" />
+        <stop offset=".4" stop-color="#fff" stop-opacity=".13" />
+        <stop offset=".5" stop-color="#fff" stop-opacity="0" />
+        <stop offset=".62" stop-color="#fff" stop-opacity=".07" />
+        <stop offset=".75" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+
+    <circle class="platter" cx="150" cy="150" r="142" />
+
+    <!-- tap the record to play or pause -->
+    <g class="record" data-action="media_player.media_play_pause" data-entity="{{ input.player }}">
+      <g class="spin">
+        <circle class="vinyl" cx="150" cy="150" r="134" />
+        <circle class="groove" cx="150" cy="150" r="126" />
+        <circle class="groove" cx="150" cy="150" r="117" />
+        <circle class="groove" cx="150" cy="150" r="108" />
+        <circle class="groove" cx="150" cy="150" r="99" />
+        <circle class="groove" cx="150" cy="150" r="90" />
+        <circle class="groove" cx="150" cy="150" r="81" />
+        <circle class="groove" cx="150" cy="150" r="72" />
+        <circle class="groove" cx="150" cy="150" r="63" />
+        <circle class="groove" cx="150" cy="150" r="54" />
+        <circle class="label-bg" cx="150" cy="150" r="44" />
+        <image href="{{ input.player.attributes.entity_picture }}" x="106" y="106" width="88" height="88"
+               clip-path="url(#label)" preserveAspectRatio="xMidYMid slice" />
+        <circle class="mark" cx="150" cy="114" r="2.5" />
+        <circle cx="150" cy="150" r="4" fill="#0e0e0e" />
+      </g>
+      <!-- the reflection stands still while the record turns -->
+      <circle cx="150" cy="150" r="134" fill="url(#shine)" pointer-events="none" />
+    </g>
+
+    <!-- tone arm: pivot outside the record, angle follows the song -->
+    <circle class="pivot" cx="312" cy="34" r="15" />
+    <g class="arm">
+      <rect class="weight" x="303" y="2" width="18" height="16" rx="3" />
+      <path class="arm-bar" d="M312 34 L312 196 L304 222" />
+      <rect class="head" x="292" y="216" width="22" height="13" rx="3" transform="rotate(20 303 222)" />
+    </g>
+  </svg>
+
+  <div class="info">
+    <b title="{{ input.player.attributes.media_title }}">{{ input.player.attributes.media_title || 'Nothing playing' }}</b>
+    <div class="sub">
+      <span>{{ input.player.attributes.media_artist || input.player.attributes.media_series_title || input.player.attributes.app_name }}</span>
+      <span class="time">{{ clock() }}</span>
+    </div>
+  </div>
+  <p class="setup" data-show-if="!input.player">Choose a media player in the card editor.</p>
+</div>
+
+<script>
+  const PLAYER = card.input('player');
+  const SEEK = 2; // media_player feature bit for seeking
+  const REST = 0, START = 17, END = 38; // tone arm angles: rest, outer groove, inner groove
+
+  const deck = document.querySelector('.deck');
+  const svg = deck.querySelector('svg');
+  const arm = deck.querySelector('.arm');
+  const attr = (name) => card.attr(PLAYER, name);
+
+  // Position in seconds, moving on while playing (card.now() makes this tick).
+  const position = () => {
+    const pos = Number(attr('media_position'));
+    if (!Number.isFinite(pos)) return undefined;
+    if (card.state(PLAYER) !== 'playing') return pos;
+    return pos + (card.now() - Date.parse(attr('media_position_updated_at'))) / 1000;
+  };
+  const duration = () => Number(attr('media_duration')) || 0;
+  // Never past the end. Some players (the demo ones) keep counting long after the song is
+  // over; treat that as the song playing again instead of a stuck arm at the label.
+  const elapsed = () => {
+    const pos = position();
+    if (pos === undefined) return undefined;
+    const d = duration();
+    if (!d) return Math.max(0, pos);
+    return pos > d + 5 ? pos % d : Math.max(0, Math.min(pos, d));
+  };
+  const fmt = (s) => {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(Math.floor(s % 60)).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+  };
+
+  card.expose({
+    clock() {
+      const pos = elapsed();
+      if (pos === undefined) return duration() ? fmt(duration()) : '';
+      return fmt(pos) + (duration() ? ' / ' + fmt(duration()) : '');
+    },
+  });
+
+  // The arm rests beside the record and lowers onto it only while music plays,
+  // then follows the song from the outer to the inner groove.
+  let dragging = false;
+  card.effect(() => {
+    const playing = card.state(PLAYER) === 'playing';
+    const pos = elapsed();
+    const progress = duration() && pos !== undefined ? pos / duration() : 0;
+    if (!dragging) arm.style.transform = `rotate(${playing ? START + progress * (END - START) : REST}deg)`;
+    arm.classList.toggle('can-seek', playing && duration() > 0 && (Number(attr('supported_features')) & SEEK) === SEEK);
+  });
+
+  // The vinyl takes on the most colourful tone of the cover.
+  let cover;
+  card.effect(() => {
+    const picture = attr('entity_picture');
+    if (picture === cover) return;
+    cover = picture;
+    if (!picture) return deck.style.setProperty('--vinyl', '#161616');
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const px = ctx.getImageData(0, 0, 16, 16).data;
+        let best = [22, 22, 22], score = -1;
+        for (let i = 0; i < px.length; i += 4) {
+          const [r, g, b] = [px[i], px[i + 1], px[i + 2]];
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          const s = (max - min) * (max / 255); // colourful and not too dark
+          if (s > score) { score = s; best = [r, g, b]; }
+        }
+        deck.style.setProperty('--vinyl', `rgb(${best.map((c) => Math.round(c * 0.78)).join(',')})`);
+      } catch {
+        deck.style.setProperty('--vinyl', '#161616'); // cover from another server: stay black
+      }
+    };
+    img.src = picture;
+  });
+
+  // Drag the arm to jump within the song.
+  const angleAt = (e) => {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX;
+    p.y = e.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse());
+    return (Math.atan2(312 - q.x, q.y - 34) * 180) / Math.PI;
+  };
+  let dropAngle;
+  arm.addEventListener('pointerdown', (e) => {
+    if (!arm.classList.contains('can-seek')) return;
+    dragging = true;
+    arm.classList.add('dragging');
+    arm.setPointerCapture(e.pointerId);
+  });
+  arm.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    dropAngle = Math.max(START, Math.min(END, angleAt(e)));
+    arm.style.transform = `rotate(${dropAngle}deg)`;
+  });
+  const drop = () => {
+    if (!dragging) return;
+    dragging = false;
+    arm.classList.remove('dragging');
+    if (dropAngle === undefined) return;
+    const seconds = Math.round(((dropAngle - START) / (END - START)) * duration());
+    dropAngle = undefined;
+    card.call('media_player', 'media_seek', { entity_id: PLAYER, seek_position: seconds });
+  };
+  arm.addEventListener('pointerup', drop);
+  arm.addEventListener('pointercancel', drop);
+</script>

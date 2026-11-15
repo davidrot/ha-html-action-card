@@ -19,6 +19,15 @@ const cameraPicture = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 
 </svg>`;
 
 // Single-file ES module bundle for HACS / dashboard resources.
+/** Dev only: a stand-in album cover for the turntable. */
+const albumCover = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#1d3557"/>
+  <circle cx="140" cy="62" r="38" fill="#f4a261"/>
+  <path d="M0 150 Q50 110 100 140 T200 130 V200 H0Z" fill="#e63946"/>
+  <path d="M0 175 Q60 145 120 170 T200 160 V200 H0Z" fill="#a8dadc"/>
+  <text x="18" y="40" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#f1faee">Sunday</text>
+</svg>`;
+
 export default defineConfig({
   plugins: [
     {
@@ -26,9 +35,14 @@ export default defineConfig({
       apply: 'serve',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          if (!req.url?.startsWith('/api/camera_proxy')) return next();
+          const picture = req.url?.startsWith('/api/camera_proxy')
+            ? cameraPicture
+            : req.url?.startsWith('/api/media_player_proxy')
+              ? albumCover
+              : undefined;
+          if (!picture) return next();
           res.setHeader('Content-Type', 'image/svg+xml');
-          res.end(cameraPicture);
+          res.end(picture);
         });
       },
     },
