@@ -10,8 +10,9 @@
   /* transparent: no card frame, no background */
   ha-card { background: none; border: none; box-shadow: none; }
 
-  .panda { padding: 8px 8px 0; }
-  .panda svg { display: block; width: min(100%, 300px); margin: 0 auto; overflow: visible; }
+  /* Sizes are in cqw (one percent of the panda's width), so it scales as a whole. */
+  .panda { container-type: inline-size; width: min(100%, 300px); margin: 0 auto; padding-top: 8px; }
+  .panda svg { display: block; width: 100%; overflow: visible; }
 
   .fur { fill: #fbfbf8; stroke: #1d1d1f; stroke-width: 3; stroke-linejoin: round; }
   .black { fill: #1d1d1f; }
@@ -26,16 +27,16 @@
   @keyframes ear { 0%, 92%, 100% { transform: rotate(0); } 95% { transform: rotate(-9deg); } }
 
   .sign {
-    position: relative; z-index: 1; width: min(88%, 280px); margin: -30px auto 0; padding: 12px 14px 20px;
+    position: relative; z-index: 1; box-sizing: border-box; width: 94cqw; margin: -10cqw auto 0; padding: 4cqw 4cqw 6.5cqw;
     text-align: center; color: #3a2a17;
-    background: linear-gradient(180deg, #f6dfb1, #e9c98a); border: 3px solid #1d1d1f; border-radius: 10px;
-    box-shadow: 0 5px 0 #1d1d1f; transform: rotate(-1.5deg);
+    background: linear-gradient(180deg, #f6dfb1, #e9c98a); border: 1cqw solid #1d1d1f; border-radius: 3.3cqw;
+    box-shadow: 0 1.6cqw 0 #1d1d1f; transform: rotate(-1.5deg);
     font-family: ui-rounded, "SF Pro Rounded", "Nunito", ui-sans-serif, system-ui, sans-serif;
   }
-  .sign h3 { margin: 0; font-size: 20px; letter-spacing: .01em; }
-  .sign p { margin: 4px 0 0; font-size: 13px; opacity: .8; }
-  .paws { position: relative; z-index: 2; display: flex; justify-content: space-between; width: min(96%, 310px); margin: -22px auto 0; padding-bottom: 12px; }
-  .paws i { width: 44px; height: 30px; background: #1d1d1f; border-radius: 50% 50% 46% 46%; }
+  .sign h3 { margin: 0; font-size: 6.6cqw; line-height: 1.25; letter-spacing: .01em; }
+  .sign p { margin: 1.2cqw 0 0; font-size: 4.3cqw; line-height: 1.35; opacity: .8; }
+  .paws { position: relative; z-index: 2; display: flex; justify-content: space-between; width: 102cqw; margin: -7cqw -1cqw 0; padding-bottom: 4cqw; }
+  .paws i { width: 14.5cqw; height: 10cqw; background: #1d1d1f; border-radius: 50% 50% 46% 46%; }
 </style>
 
 <div class="panda">

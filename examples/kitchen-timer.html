@@ -14,14 +14,17 @@
   ha-card { background: none; border: none; box-shadow: none; }
 
   .timer { display: grid; place-items: center; padding: 10px; user-select: none; -webkit-user-select: none; }
+  /* All sizes below are in cqw: one percent of the case width. The timer keeps its
+     proportions in a narrow column and in a wide one. */
   .case {
+    container-type: inline-size;
     box-sizing: border-box; width: min(100%, 300px); aspect-ratio: 1; padding: 6%;
     background: linear-gradient(150deg, #b3d2f1, #7eaee0); border-radius: 17%;
     box-shadow: 0 12px 26px rgba(40, 80, 130, .3), inset 0 2px 3px rgba(255, 255, 255, .7), inset 0 -5px 9px rgba(30, 70, 120, .28);
   }
   .face {
     position: relative; box-sizing: border-box; height: 100%; padding: 9% 7% 6%;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; justify-content: space-between;
     background: linear-gradient(#ffffff, #eff2f6); border-radius: 13%;
     box-shadow: inset 0 0 0 1px rgba(40, 80, 130, .12);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -32,34 +35,34 @@
   @keyframes ring { 50% { background: #ff6b5e; } }
 
   .lcd {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 1.5%; padding: 0 3%;
-    background: linear-gradient(#c3ccb6, #d2d9c6); border: 2px solid #98a18e; border-radius: 7px;
+    height: 34cqw; display: flex; align-items: center; justify-content: center; gap: 1cqw;
+    background: linear-gradient(#c3ccb6, #d2d9c6); border: 2px solid #98a18e; border-radius: 2.3cqw;
     box-shadow: inset 0 3px 7px rgba(0, 0, 0, .28);
   }
-  .d { height: 74%; aspect-ratio: 44 / 80; }
+  .d { height: 24cqw; aspect-ratio: 44 / 80; }
   .d svg { display: block; height: 100%; transform: skewX(-5deg); }
   .d polygon { fill: #23281f; opacity: .07; }
   .d polygon.on { opacity: .9; }
-  .unit { align-self: flex-start; margin: 14% 1% 0 0; font-size: 11px; font-weight: 700; color: #23281f; opacity: .8; }
-  .colon { display: grid; gap: 14px; margin: 0 1.5%; }
-  .colon i { width: 7px; height: 7px; background: #23281f; opacity: .9; }
+  .unit { align-self: flex-start; margin: 7cqw .5cqw 0 0; font-size: 3.6cqw; font-weight: 700; color: #23281f; opacity: .8; }
+  .colon { display: grid; gap: 4.6cqw; margin: 0 1cqw; }
+  .colon i { width: 2.3cqw; height: 2.3cqw; background: #23281f; opacity: .9; }
   .running .colon { animation: colon 1s steps(2) infinite; }
   @keyframes colon { 50% { opacity: .15; } }
 
-  .clear { position: relative; width: 60%; height: 7px; margin: 7% 0 1.5% 3%; border: 1.5px solid #aab3be; border-bottom: 0; cursor: pointer; }
-  .clear span { position: absolute; left: 50%; top: -8px; transform: translateX(-50%); padding: 0 6px; background: #f8f9fb; color: #8b96a3; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+  .clear { position: relative; width: 60%; height: 2.3cqw; margin: 3cqw 0 0 3%; border: 1.5px solid #aab3be; border-bottom: 0; cursor: pointer; }
+  .clear span { position: absolute; left: 50%; top: -2.4cqw; transform: translateX(-50%); padding: 0 2cqw; background: #f8f9fb; color: #8b96a3; font-size: 3.3cqw; line-height: 1.3; font-weight: 700; letter-spacing: .08em; }
 
   .buttons { display: flex; justify-content: space-between; }
   .buttons button {
     width: 29%; aspect-ratio: 1; padding: 0; cursor: pointer; touch-action: none;
-    color: #8b96a3; font: 700 13px/1.15 ui-sans-serif, system-ui, sans-serif; letter-spacing: .04em;
+    color: #8b96a3; font: 700 4.3cqw/1.15 ui-sans-serif, system-ui, sans-serif; letter-spacing: .04em;
     background: linear-gradient(#ffffff, #eceff3); border: 1.5px solid #c3cad3; border-radius: 50%;
     box-shadow: 0 3px 5px rgba(40, 60, 90, .18), inset 0 1px 0 #fff;
     transition: transform .06s, box-shadow .06s;
   }
   .buttons button:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(40, 60, 90, .2), inset 0 2px 4px rgba(40, 60, 90, .15); }
-  .buttons .go { font-size: 11px; }
-  .buttons .go hr { width: 62%; margin: 2px auto; border: 0; border-top: 1.5px solid #c3cad3; }
+  .buttons .go { font-size: 3.5cqw; }
+  .buttons .go hr { width: 62%; margin: .6cqw auto; border: 0; border-top: 1.5px solid #c3cad3; }
 </style>
 
 <template id="digit">

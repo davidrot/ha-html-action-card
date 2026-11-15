@@ -37,6 +37,8 @@
     const params = new URLSearchParams(location.search);
     const only = params.get('only');
     const EXAMPLES = ['kitchen-timer', 'panda', 'snake', 'camera-control'].filter((n) => !only || n === only);
+    const width = params.get('width');
+    if (width) document.getElementById('gallery').style.gridTemplateColumns = `repeat(auto-fill, ${Number(width)}px)`;
     if (only) {
       document.body.classList.add('shot');
       document.body.style.setProperty('--scale', params.get('scale') || '1');

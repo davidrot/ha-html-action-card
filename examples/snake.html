@@ -16,19 +16,19 @@
     user-select: none; -webkit-user-select: none; touch-action: none;
   }
   .screen {
-    position: relative; padding: 8px 8px 6px; color: var(--dark); background: var(--lcd);
+    container-type: inline-size; position: relative; padding: 8px 8px 6px; color: var(--dark); background: var(--lcd);
     border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, .35);
   }
-  .hud { display: flex; justify-content: space-between; padding: 0 2px 5px; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+  .hud { display: flex; justify-content: space-between; padding: 0 2px 5px; font-size: min(13px, 5.6cqw); font-weight: 700; letter-spacing: .08em; }
   canvas { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; border: 2px solid var(--dark); box-sizing: border-box; }
   .msg {
     position: absolute; inset: 30px 10px 8px; display: grid; place-items: center; text-align: center;
-    font-size: 15px; font-weight: 700; line-height: 1.7; letter-spacing: .08em; cursor: pointer;
+    font-size: min(15px, 6cqw); font-weight: 700; line-height: 1.7; letter-spacing: .08em; cursor: pointer;
   }
-  .msg span { white-space: pre-line; padding: 8px 12px; background: var(--lcd); border: 2px solid var(--dark); }
+  .msg span { white-space: pre; padding: 8px 12px; background: var(--lcd); border: 2px solid var(--dark); }
   .playing .msg { display: none; }
 
-  .pad { display: grid; grid-template-columns: repeat(3, 52px); gap: 6px; justify-content: center; margin-top: 14px; }
+  .pad { display: grid; grid-template-columns: repeat(3, minmax(0, 52px)); gap: 6px; justify-content: center; margin-top: 14px; }
   .pad button {
     height: 44px; cursor: pointer; color: #dbe4f0; font-size: 16px;
     background: #3d4c63; border: 0; border-radius: 10px; box-shadow: 0 3px 0 #18202c;
