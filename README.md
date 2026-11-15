@@ -103,6 +103,8 @@ The whole card is one piece of HTML in `content`: markup, a `<style>` block, a `
 
 ## Installation
 
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=davidrot&repository=ha-html-action-card&category=plugin)
+
 **HACS (custom repository):**
 1. HACS → ⋮ → *Custom repositories*.
 2. Repository: `https://github.com/davidrot/ha-html-action-card`, type: *Dashboard* (called *Lovelace* in older HACS versions).
