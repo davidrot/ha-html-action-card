@@ -16,6 +16,8 @@ Add states with `{{ }}`, conditions with `data-show-if`, and Home Assistant acti
 
 <p align="center"><a href="docs/media/demo.mp4">▶ Watch the demo (1:19)</a>: the cards in Home Assistant, adding one, picking its entities in the form, the security rating.</p>
 
+<p align="center">🌐 <a href="https://davidrot.github.io/ha-html-action-card/">Project website</a> · 🖼️ <a href="showroom">Showroom</a> · 🤖 <a href="docs/LLM-PROMPT.md">Prompt for AI assistants</a></p>
+
 ## Contents
 
 - [Quick look](#quick-look)
